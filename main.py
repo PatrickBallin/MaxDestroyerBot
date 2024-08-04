@@ -8,11 +8,14 @@ import operator
 
 # -------------------------------------------- 0. imports ----------------------------------------------------
 # import math
+import time
+
 from Evaluation import beast_get_best_move
 from Evaluation import init_bot
+
 from Evaluation import get_legale_laufer_zuge
-from Evaluation import get_laufer_shift_operation
-import time
+from Evaluation import get_legale_turm_zuge
+
 
 # -------------------------------------------- 1. Aufabu ----------------------------------------------------
 # Ändern zu figuren_weiss_maske und schwarz
@@ -35,11 +38,13 @@ ist_zug_legal = True
 figuren = {
     "w_ba": int("0000000000000000000000000000000010000000000000000000000000000000", 2),
     # "w_ko": int("0000000000000000000000000000000000000000000000000000000000001000", 2),
-    "w_la": int("0000000000000000000000000100000000000000000000000000000000000000", 2),
+    "w_la": int("0000000000000000000000000000000000000000000000100000000000000000", 2),
+    "w_tu": int("0000000000000000000000000000000000000100000000000000000000000000", 2),
 
     "s_ba": int("0000000000000000000000000000000000110000000000000000000000000000", 2),
     # "s_ko": int("0000100000000000000000000000000000000000000000000000000000000000", 2)
     "s_la": int("0000001000000000000000000000000000000000000000000000000000000000", 2),
+    "s_tu": int("0000000000000000001000000000000000000000000000000000000000000000", 2),
 }
 
 
@@ -55,8 +60,8 @@ figuren = {
 # }
 
 # Schleifen gehen keys durch --> Keys löschen wenn Figur nicht mehr auf Brett
-weiss_keys = ["w_ba", "w_la"]  # "w_ko"
-schwarz_keys = ["s_ba", "s_la"]  # "s_ko"
+weiss_keys = ["w_ba", "w_la", "w_tu"]  # "w_ko"
+schwarz_keys = ["s_ba", "s_la", "s_tu"]  # "s_ko"
 
 doppel_move_weis_maske = figuren.get("w_ba")
 doppel_move_schwarz_maske = figuren.get("s_ba")
@@ -345,6 +350,7 @@ def print_custom_schachbrett(darstellung):
         if i % schachbrett_groesse_wurzel == 0:
             print()
 
+
 def print_schachbrett_mit_bezeichnungen():
     schachbrett_darstellung_mit_bezeichnungen = [" 0  " for x in range(schachbrett_groesse)]
 
@@ -392,7 +398,9 @@ if __name__ == '__main__':
         # --------------------------- TEST ---------------------------
         # temp = get_legale_laufer_zuge(figuren.get("w_la"), figuren, ist_weis_am_zug)
 
-    tampo = get_legale_laufer_zuge(figuren.get("s_la"), figuren, False)
+    tampo = get_legale_turm_zuge(figuren.get("s_tu"), figuren, False)
+    # tampo = get_legale_laufer_zuge(figuren.get("w_la"), figuren, True)
+
     print("Erlaubte Züge::::::::::::::::")
     print_custom_schachbrett(tampo)
     print("Ergebniss", bin(tampo))

@@ -281,14 +281,14 @@ def get_legale_bauern_zuege(bauer, figuren, ist_weiss_am_zug):
 
 
 def get_legale_laufer_zuge(laufer, figuren, ist_weiss_am_zug):
-    legale_laufer_zuge = get_laufer_shift_operation(laufer, figuren, 7, operator.lshift,
-                                                    ist_weiss_am_zug) \
-                         | get_laufer_shift_operation(laufer, figuren, 9, operator.lshift,
-                                                      ist_weiss_am_zug) \
-                         | get_laufer_shift_operation(laufer, figuren, 7, operator.rshift,
-                                                      ist_weiss_am_zug) \
-                         | get_laufer_shift_operation(laufer, figuren, 9, operator.rshift,
-                                                      ist_weiss_am_zug)
+    legale_laufer_zuge = get_shift_movement_operation(laufer, figuren, 7, operator.lshift,
+                                                      ist_weiss_am_zug, "_la", 0, biggest_single_bit_number) \
+                         | get_shift_movement_operation(laufer, figuren, 9, operator.lshift,
+                                                        ist_weiss_am_zug, "_la", 0, biggest_single_bit_number) \
+                         | get_shift_movement_operation(laufer, figuren, 7, operator.rshift,
+                                                        ist_weiss_am_zug, "_la", 0, biggest_single_bit_number) \
+                         | get_shift_movement_operation(laufer, figuren, 9, operator.rshift,
+                                                        ist_weiss_am_zug, "_la", 0, biggest_single_bit_number)
 
     return legale_laufer_zuge
 
@@ -297,8 +297,26 @@ def get_legale_pferd_zuge():
     pass
 
 
-def get_legale_turm_zuge():
-    pass
+def get_legale_turm_zuge(turm, figuren, ist_weiss_am_zug):
+    vertikales_movement = get_shift_movement_operation(turm, figuren, 8, operator.lshift, ist_weiss_am_zug, "_tu", 0,
+                                                       biggest_single_bit_number) \
+                          | get_shift_movement_operation(turm, figuren, 8, operator.rshift, ist_weiss_am_zug, "_tu", 0,
+                                                         biggest_single_bit_number)
+
+    # shift berechnung für Turm bit position in Byte
+    bit_position = (math.log2(turm) - 1) % 8
+    lshift = 7 - bit_position
+    rshift = bit_position
+
+    horizontales_movement = get_shift_movement_operation(turm, figuren, 1, operator.lshift, ist_weiss_am_zug, "_tu",
+                                                         2 ** (math.log2(turm) - rshift),
+                                                         2 ** (math.log2(turm) + lshift), True) \
+                            | get_shift_movement_operation(turm, figuren, 1, operator.rshift, ist_weiss_am_zug, "_tu",
+                                                           2 ** (math.log2(turm) - rshift),
+                                                           2 ** (math.log2(turm) + lshift), True)
+
+    legale_turm_zuge = vertikales_movement | horizontales_movement
+    return legale_turm_zuge
 
 
 def get_legale_damen_zuge():
@@ -310,34 +328,42 @@ def get_legale_konig_zuge():
 
 
 # ------------------------------------- Help Funktionen für Figuren movement ------------------------------------
-def get_laufer_shift_operation(laufer, figuren, shift_number, operator, ist_weiss_am_zug):
+def get_shift_movement_operation(figur, figuren, shift_number, operator, ist_weiss_am_zug, figurname, lower_limit,
+                                 upper_limit, spezial_flag=False):
     legale_zuge = 0
     schachbrett = get_schachbrett(figuren)
-    temp_laufer = laufer
-    print("Ausgangs Läufer: ", bin(laufer))
+    temp_figur = figur
+    print("Ausgangs Figur: ", bin(figur))
 
     while True:
-        temp_laufer = operator(temp_laufer, shift_number)
+        temp_figur = operator(temp_figur, shift_number)
 
-        if temp_laufer & schachbrett == 0:
-            legale_zuge = legale_zuge | temp_laufer
+        if temp_figur & schachbrett == 0:
+            legale_zuge = legale_zuge | temp_figur
         else:
             # Figur steht auf dem Feld
             # Ist sie feindlich füge hinzu, sonst brich ab
             if ist_weiss_am_zug:
-                if temp_laufer & get_schwarz_figuren_maske(figuren):
-                    legale_zuge = legale_zuge | temp_laufer
+                if temp_figur & get_schwarz_figuren_maske(figuren):
+                    legale_zuge = legale_zuge | temp_figur
                 return legale_zuge
             else:
-                if temp_laufer & get_weis_figuren_maske(figuren):
-                    legale_zuge = legale_zuge | temp_laufer
+                if temp_figur & get_weis_figuren_maske(figuren):
+                    legale_zuge = legale_zuge | temp_figur
                 return legale_zuge
 
-        if temp_laufer & laufer_end_calculation_maske != 0:
-            return legale_zuge
+        if figurname == "_la":  # Ausnahmefall für Läufer berechnungen (verhidnert übern Rand schlagen)
+            if temp_figur & laufer_end_calculation_maske != 0:
+                return legale_zuge
 
-        if temp_laufer <= 0 or temp_laufer > biggest_single_bit_number:
-            break
+        if spezial_flag:
+            # spezielles break für turm horizontal
+            if temp_figur < lower_limit or temp_figur > upper_limit:
+                break
+        else:
+            # Standard Stop Condition
+            if temp_figur <= lower_limit or temp_figur > upper_limit:
+                break
 
     return legale_zuge
 
