@@ -1,3 +1,4 @@
+# coding=utf-8
 """
 
 1. Erstelle Generelle Brett Gewichtung (Mitte High Rand Low)
@@ -304,23 +305,25 @@ def get_legale_turm_zuge(turm, figuren, ist_weiss_am_zug):
                                                          biggest_single_bit_number)
 
     # shift berechnung für Turm bit position in Byte
-    bit_position = (math.log2(turm) - 1) % 8
+    bit_position = (math.log2(turm)) % 8
     lshift = 7 - bit_position
     rshift = bit_position
 
-    horizontales_movement = get_shift_movement_operation(turm, figuren, 1, operator.lshift, ist_weiss_am_zug, "_tu",
-                                                         2 ** (math.log2(turm) - rshift),
-                                                         2 ** (math.log2(turm) + lshift), True) \
-                            | get_shift_movement_operation(turm, figuren, 1, operator.rshift, ist_weiss_am_zug, "_tu",
-                                                           2 ** (math.log2(turm) - rshift),
-                                                           2 ** (math.log2(turm) + lshift), True)
+    horizontales_movement = 0
+
+    if lshift > 0:
+        horizontales_movement = get_shift_movement_operation(turm, figuren, 1, operator.lshift, ist_weiss_am_zug, "_tu",2 ** (math.log2(turm) - rshift), 2 ** (math.log2(turm) + lshift))
+    if rshift > 0:
+        horizontales_movement = horizontales_movement | get_shift_movement_operation(turm, figuren, 1, operator.rshift, ist_weiss_am_zug, "_tu",
+                                           2 ** (math.log2(turm) - rshift),
+                                           2 ** (math.log2(turm) + lshift))
 
     legale_turm_zuge = vertikales_movement | horizontales_movement
     return legale_turm_zuge
 
 
-def get_legale_damen_zuge():
-    pass
+def get_legale_damen_zuge(dame, figuren, ist_weiss_am_zug):
+    return get_legale_laufer_zuge(dame, figuren, ist_weiss_am_zug) | get_legale_turm_zuge(dame, figuren, ist_weiss_am_zug)
 
 
 def get_legale_konig_zuge():
@@ -329,11 +332,10 @@ def get_legale_konig_zuge():
 
 # ------------------------------------- Help Funktionen für Figuren movement ------------------------------------
 def get_shift_movement_operation(figur, figuren, shift_number, operator, ist_weiss_am_zug, figurname, lower_limit,
-                                 upper_limit, spezial_flag=False):
+                                 upper_limit):
     legale_zuge = 0
     schachbrett = get_schachbrett(figuren)
     temp_figur = figur
-    print("Ausgangs Figur: ", bin(figur))
 
     while True:
         temp_figur = operator(temp_figur, shift_number)
@@ -356,14 +358,8 @@ def get_shift_movement_operation(figur, figuren, shift_number, operator, ist_wei
             if temp_figur & laufer_end_calculation_maske != 0:
                 return legale_zuge
 
-        if spezial_flag:
-            # spezielles break für turm horizontal
-            if temp_figur < lower_limit or temp_figur > upper_limit:
-                break
-        else:
-            # Standard Stop Condition
-            if temp_figur <= lower_limit or temp_figur > upper_limit:
-                break
+        if temp_figur <= lower_limit or temp_figur >= upper_limit:
+            break
 
     return legale_zuge
 

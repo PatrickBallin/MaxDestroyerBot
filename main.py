@@ -1,3 +1,4 @@
+# coding=utf-8
 """
 DO do's:
     Get LEgale Züge und Aktualisierung des Brettes so bauen das die Funktion nur die neuen Felder zurückgibt
@@ -15,6 +16,7 @@ from Evaluation import init_bot
 
 from Evaluation import get_legale_laufer_zuge
 from Evaluation import get_legale_turm_zuge
+from Evaluation import get_legale_damen_zuge
 
 
 # -------------------------------------------- 1. Aufabu ----------------------------------------------------
@@ -23,9 +25,9 @@ schachbrett = 0
 figuren_weiss = 0
 figuren_schwarz = 0
 
-schachbrett_groesse = 0
 schachbrett_groesse_wurzel = 0
 
+schachbrett_groesse = 0
 biggest_single_bit_number = 0
 
 ist_weis_am_zug = True
@@ -36,15 +38,17 @@ ist_zug_legal = True
 
 # 8 * 8 Daten:
 figuren = {
-    "w_ba": int("0000000000000000000000000000000010000000000000000000000000000000", 2),
-    # "w_ko": int("0000000000000000000000000000000000000000000000000000000000001000", 2),
-    "w_la": int("0000000000000000000000000000000000000000000000100000000000000000", 2),
-    "w_tu": int("0000000000000000000000000000000000000100000000000000000000000000", 2),
+    "w_ba": int("0000000000000000000000000000000000000000000000001111111100000000", 2),
+    "w_la": int("0000000000000000000000000000000000000000000000000000000000100100", 2),
+    "w_tu": int("0010000000000000000000000000000000000000000000000000000010000001", 2),
+    "w_da": int("0000000000000000000000000000000000000000000000000000000000010000", 2),
+    "w_ko": int("0000000000000000000000000000000000000000000000000000000000001000", 2),
 
-    "s_ba": int("0000000000000000000000000000000000110000000000000000000000000000", 2),
-    # "s_ko": int("0000100000000000000000000000000000000000000000000000000000000000", 2)
-    "s_la": int("0000001000000000000000000000000000000000000000000000000000000000", 2),
-    "s_tu": int("0000000000000000001000000000000000000000000000000000000000000000", 2),
+    "s_ba": int("0000000011111111000000000000000000000000000000000000000000000000", 2),
+    "s_la": int("0010010000000000000000000000000000000000000000000000000000000000", 2),
+    "s_tu": int("1000000100000000000000000000000000000000000000000000000000000000", 2),
+    "s_da": int("0001000000000000000000000000000000000000000000000000000000000000", 2),
+    "s_ko": int("0000100000000000000000000000000000000000000000000000000000000000", 2)
 }
 
 
@@ -398,9 +402,10 @@ if __name__ == '__main__':
         # --------------------------- TEST ---------------------------
         # temp = get_legale_laufer_zuge(figuren.get("w_la"), figuren, ist_weis_am_zug)
 
-    tampo = get_legale_turm_zuge(figuren.get("s_tu"), figuren, False)
-    # tampo = get_legale_laufer_zuge(figuren.get("w_la"), figuren, True)
+    # tampo = get_legale_turm_zuge(figuren.get("s_tu"), figuren, False)
+    tampo = get_legale_laufer_zuge(figuren.get("w_la"), figuren, True)
 
+    # tampo = get_legale_damen_zuge(figuren.get("s_da"), figuren, False)
     print("Erlaubte Züge::::::::::::::::")
     print_custom_schachbrett(tampo)
     print("Ergebniss", bin(tampo))
