@@ -294,8 +294,17 @@ def get_legale_laufer_zuge(laufer, figuren, ist_weiss_am_zug):
     return legale_laufer_zuge
 
 
-def get_legale_pferd_zuge():
-    pass
+def get_legale_pferd_zuge(pferd, figuren, ist_weiss_am_zug):
+    legal_moves = get_shift_movement_operation_pferd(pferd, figuren, 6, 1, operator.lshift, operator.rshift, ist_weiss_am_zug) | \
+                  get_shift_movement_operation_pferd(pferd, figuren, 10, 1, operator.lshift, operator.rshift, ist_weiss_am_zug) | \
+                  get_shift_movement_operation_pferd(pferd, figuren, 15, 2, operator.lshift, operator.rshift, ist_weiss_am_zug) | \
+                  get_shift_movement_operation_pferd(pferd, figuren, 17, 2, operator.lshift, operator.rshift, ist_weiss_am_zug) | \
+                  get_shift_movement_operation_pferd(pferd, figuren, 6, 1, operator.rshift, operator.lshift, ist_weiss_am_zug) | \
+                  get_shift_movement_operation_pferd(pferd, figuren, 10, 1, operator.rshift, operator.lshift, ist_weiss_am_zug) | \
+                  get_shift_movement_operation_pferd(pferd, figuren, 15, 2, operator.rshift, operator.lshift, ist_weiss_am_zug) | \
+                  get_shift_movement_operation_pferd(pferd, figuren, 17, 2, operator.rshift, operator.lshift, ist_weiss_am_zug)
+
+    return legal_moves
 
 
 def get_legale_turm_zuge(turm, figuren, ist_weiss_am_zug):
@@ -362,6 +371,30 @@ def get_shift_movement_operation(figur, figuren, shift_number, operator, ist_wei
             break
 
     return legale_zuge
+
+
+def get_shift_movement_operation_pferd(pferd , figuren, shift_numer, byte_shifts, operator_shift, controll_operator_shift, ist_weiss_am_zug):
+    legaler_zug = 0
+    schachbrett = get_schachbrett(figuren)
+    temp_figur = pferd
+    pferd_byte_pos = math.ceil(pferd.bit_length() / 8)
+    temp_figur = operator_shift(temp_figur, shift_numer)
+
+    # ist Byte BYte_shifts höhfer/niedriger als Pferd?
+    if pferd_byte_pos == math.ceil(controll_operator_shift(temp_figur, byte_shifts * 8).bit_length() / 8):
+
+        # Pferd zug is korrekt
+        if temp_figur & schachbrett == 0:
+            legaler_zug = temp_figur
+        else:
+            if ist_weiss_am_zug:
+                if temp_figur & get_schwarz_figuren_maske(figuren):
+                    legaler_zug = temp_figur
+            else:
+                if temp_figur & get_weis_figuren_maske(figuren):
+                    legaler_zug = temp_figur
+
+    return legaler_zug
 
 
 # ------------------------------------- Figuren Zug ausführungs Funktionen ------------------------------------

@@ -15,8 +15,10 @@ from Evaluation import beast_get_best_move
 from Evaluation import init_bot
 
 from Evaluation import get_legale_laufer_zuge
+from Evaluation import get_legale_pferd_zuge
 from Evaluation import get_legale_turm_zuge
 from Evaluation import get_legale_damen_zuge
+from Evaluation import get_legale_bauern_zuege
 
 
 # -------------------------------------------- 1. Aufabu ----------------------------------------------------
@@ -38,14 +40,16 @@ ist_zug_legal = True
 
 # 8 * 8 Daten:
 figuren = {
-    "w_ba": int("0000000000000000000000000000000000000000000000001111111100000000", 2),
+    "w_ba": int("0000000000000000000000000000000000000000000001001111101100000000", 2),
     "w_la": int("0000000000000000000000000000000000000000000000000000000000100100", 2),
-    "w_tu": int("0010000000000000000000000000000000000000000000000000000010000001", 2),
+    "w_pf": int("0000000000000000000000000000000000000000000000000000000001000010", 2),
+    "w_tu": int("0000000000000000000000000000000000000000000000000000000010000001", 2),
     "w_da": int("0000000000000000000000000000000000000000000000000000000000010000", 2),
     "w_ko": int("0000000000000000000000000000000000000000000000000000000000001000", 2),
 
     "s_ba": int("0000000011111111000000000000000000000000000000000000000000000000", 2),
     "s_la": int("0010010000000000000000000000000000000000000000000000000000000000", 2),
+    "s_pf": int("0100001000000000000000000000000000000000000000000000000000000000", 2),
     "s_tu": int("1000000100000000000000000000000000000000000000000000000000000000", 2),
     "s_da": int("0001000000000000000000000000000000000000000000000000000000000000", 2),
     "s_ko": int("0000100000000000000000000000000000000000000000000000000000000000", 2)
@@ -64,8 +68,8 @@ figuren = {
 # }
 
 # Schleifen gehen keys durch --> Keys löschen wenn Figur nicht mehr auf Brett
-weiss_keys = ["w_ba", "w_la", "w_tu"]  # "w_ko"
-schwarz_keys = ["s_ba", "s_la", "s_tu"]  # "s_ko"
+weiss_keys = ["w_ba", "w_la", "w_pf", "w_tu", "w_da", "w_ko"]
+schwarz_keys = ["s_ba", "s_la", "s_pf", "s_tu", "s_da", "s_ko"]
 
 doppel_move_weis_maske = figuren.get("w_ba")
 doppel_move_schwarz_maske = figuren.get("s_ba")
@@ -152,71 +156,71 @@ def ziehe_figur(zug_auswahl, zug_ziel, figurname):
 
 # -------------------------------------------- Figuren Legale Züge --------------------------------------------
 # TODO: Kann man löschen
-def get_legale_bauern_zuege(zug_auswahl):
-    legale_bauern_zuge = 0
-
-    # Möglichkeiten an Bauern züge
-    if ist_weis_am_zug:
-        # normal fall weis Bauer bewegt sich um eins nach vorne
-        # Steht etwas auf diesem Feld
-        if (zug_auswahl << schachbrett_groesse_wurzel) & schachbrett == 0:
-            legale_bauern_zuge = zug_auswahl << schachbrett_groesse_wurzel
-
-        # Doppel Sprung
-        if (zug_auswahl << (schachbrett_groesse_wurzel * 2) | (zug_auswahl << schachbrett_groesse_wurzel)) & schachbrett == 0:
-            # falls der Bauer am Anfang steht
-            if zug_auswahl & doppel_move_weis_maske:
-                temp = zug_auswahl << (schachbrett_groesse_wurzel * 2)
-                legale_bauern_zuge = legale_bauern_zuge | temp
-
-        # Attack Move
-        gegnerische_figuren = get_schwarz_figuren_maske()
-
-        # Fall Angriff: Steht diagonal links ein Gegner dann füge zuege hinzu
-        angriff_diagonal_links = zug_auswahl << (schachbrett_groesse_wurzel + 1)
-
-        # TODO: Übers BRett schlagen ist möglich aber nicht im Bot
-        # Steht eine Gengerische Figur links diagonal
-        if angriff_diagonal_links & gegnerische_figuren != 0:
-            legale_bauern_zuge = legale_bauern_zuge | angriff_diagonal_links
-
-        # Fall Angriff: Steht diagonal rechts ein Gegner dann füge zuege hinzu
-        angriff_diagonal_rechts = zug_auswahl << (schachbrett_groesse_wurzel - 1)
-
-        if angriff_diagonal_rechts & gegnerische_figuren != 0:
-            legale_bauern_zuge = legale_bauern_zuge | angriff_diagonal_rechts
-
-    else:
-        # normal fall schwarz Bauer bewegt sich um eins nach vorne
-        # Steht etwas auf diesem Feld
-        if (zug_auswahl >> schachbrett_groesse_wurzel) & schachbrett == 0:
-            legale_bauern_zuge = zug_auswahl >> schachbrett_groesse_wurzel
-
-        # Doppel Sprung
-        if ((zug_auswahl >> (schachbrett_groesse_wurzel * 2)) | zug_auswahl >> schachbrett_groesse_wurzel) & schachbrett == 0:
-            # falls der Bauer am Anfang steht
-            if zug_auswahl & doppel_move_schwarz_maske:
-                temp = zug_auswahl >> (schachbrett_groesse_wurzel * 2)
-                legale_bauern_zuge = legale_bauern_zuge | temp
-
-        # Attack Move
-        gegnerische_figuren = get_weiss_figuren_maske()
-
-        # Fall Angriff: Steht diagonal links ein Gegner dann füge zuege hinzu
-        angriff_diagonal_links = zug_auswahl >> (schachbrett_groesse_wurzel + 1)
-
-        # Steht eine Gengerische Figur links diagonal
-
-        if angriff_diagonal_links & gegnerische_figuren != 0:
-            legale_bauern_zuge = legale_bauern_zuge | angriff_diagonal_links
-
-        # Fall Angriff: Steht diagonal rechts ein Gegner dann füge zuege hinzu
-        angriff_diagonal_rechts = zug_auswahl >> (schachbrett_groesse_wurzel - 1)
-
-        if angriff_diagonal_rechts & gegnerische_figuren != 0:
-            legale_bauern_zuge = legale_bauern_zuge | angriff_diagonal_rechts
-
-    return legale_bauern_zuge
+# def get_legale_bauern_zuege(zug_auswahl):
+#     legale_bauern_zuge = 0
+#
+#     # Möglichkeiten an Bauern züge
+#     if ist_weis_am_zug:
+#         # normal fall weis Bauer bewegt sich um eins nach vorne
+#         # Steht etwas auf diesem Feld
+#         if (zug_auswahl << schachbrett_groesse_wurzel) & schachbrett == 0:
+#             legale_bauern_zuge = zug_auswahl << schachbrett_groesse_wurzel
+#
+#         # Doppel Sprung
+#         if (zug_auswahl << (schachbrett_groesse_wurzel * 2) | (zug_auswahl << schachbrett_groesse_wurzel)) & schachbrett == 0:
+#             # falls der Bauer am Anfang steht
+#             if zug_auswahl & doppel_move_weis_maske:
+#                 temp = zug_auswahl << (schachbrett_groesse_wurzel * 2)
+#                 legale_bauern_zuge = legale_bauern_zuge | temp
+#
+#         # Attack Move
+#         gegnerische_figuren = get_schwarz_figuren_maske()
+#
+#         # Fall Angriff: Steht diagonal links ein Gegner dann füge zuege hinzu
+#         angriff_diagonal_links = zug_auswahl << (schachbrett_groesse_wurzel + 1)
+#
+#         # TODO: Übers BRett schlagen ist möglich aber nicht im Bot
+#         # Steht eine Gengerische Figur links diagonal
+#         if angriff_diagonal_links & gegnerische_figuren != 0:
+#             legale_bauern_zuge = legale_bauern_zuge | angriff_diagonal_links
+#
+#         # Fall Angriff: Steht diagonal rechts ein Gegner dann füge zuege hinzu
+#         angriff_diagonal_rechts = zug_auswahl << (schachbrett_groesse_wurzel - 1)
+#
+#         if angriff_diagonal_rechts & gegnerische_figuren != 0:
+#             legale_bauern_zuge = legale_bauern_zuge | angriff_diagonal_rechts
+#
+#     else:
+#         # normal fall schwarz Bauer bewegt sich um eins nach vorne
+#         # Steht etwas auf diesem Feld
+#         if (zug_auswahl >> schachbrett_groesse_wurzel) & schachbrett == 0:
+#             legale_bauern_zuge = zug_auswahl >> schachbrett_groesse_wurzel
+#
+#         # Doppel Sprung
+#         if ((zug_auswahl >> (schachbrett_groesse_wurzel * 2)) | zug_auswahl >> schachbrett_groesse_wurzel) & schachbrett == 0:
+#             # falls der Bauer am Anfang steht
+#             if zug_auswahl & doppel_move_schwarz_maske:
+#                 temp = zug_auswahl >> (schachbrett_groesse_wurzel * 2)
+#                 legale_bauern_zuge = legale_bauern_zuge | temp
+#
+#         # Attack Move
+#         gegnerische_figuren = get_weiss_figuren_maske()
+#
+#         # Fall Angriff: Steht diagonal links ein Gegner dann füge zuege hinzu
+#         angriff_diagonal_links = zug_auswahl >> (schachbrett_groesse_wurzel + 1)
+#
+#         # Steht eine Gengerische Figur links diagonal
+#
+#         if angriff_diagonal_links & gegnerische_figuren != 0:
+#             legale_bauern_zuge = legale_bauern_zuge | angriff_diagonal_links
+#
+#         # Fall Angriff: Steht diagonal rechts ein Gegner dann füge zuege hinzu
+#         angriff_diagonal_rechts = zug_auswahl >> (schachbrett_groesse_wurzel - 1)
+#
+#         if angriff_diagonal_rechts & gegnerische_figuren != 0:
+#             legale_bauern_zuge = legale_bauern_zuge | angriff_diagonal_rechts
+#
+#     return legale_bauern_zuge
 
 
 # -------------------------------------- Daten Funktionen --------------------------------------------------
@@ -402,10 +406,15 @@ if __name__ == '__main__':
         # --------------------------- TEST ---------------------------
         # temp = get_legale_laufer_zuge(figuren.get("w_la"), figuren, ist_weis_am_zug)
 
-    # tampo = get_legale_turm_zuge(figuren.get("s_tu"), figuren, False)
-    tampo = get_legale_laufer_zuge(figuren.get("w_la"), figuren, True)
+    ba = get_legale_bauern_zuege(figuren.get("w_ba"), figuren, True)
+    la = get_legale_laufer_zuge(figuren.get("w_la"), figuren, True)
+    pf = get_legale_pferd_zuge(figuren.get("w_pf"), figuren, True)
+    tu = get_legale_turm_zuge(figuren.get("w_tu"), figuren, True)
+    da = get_legale_damen_zuge(figuren.get("w_da"), figuren, True)
 
-    # tampo = get_legale_damen_zuge(figuren.get("s_da"), figuren, False)
+    # white_attack = ba | la | pf | tu | da
+    white_attack = pf
+
     print("Erlaubte Züge::::::::::::::::")
-    print_custom_schachbrett(tampo)
-    print("Ergebniss", bin(tampo))
+    print_custom_schachbrett(white_attack)
+    print("Ergebniss", bin(white_attack), " Felder: ", bin(white_attack).count("1"))
