@@ -19,6 +19,7 @@ from Evaluation import get_legale_pferd_zuge
 from Evaluation import get_legale_turm_zuge
 from Evaluation import get_legale_damen_zuge
 from Evaluation import get_legale_bauern_zuege
+from Evaluation import get_legale_konig_zuge
 
 
 # -------------------------------------------- 1. Aufabu ----------------------------------------------------
@@ -40,7 +41,7 @@ ist_zug_legal = True
 
 # 8 * 8 Daten:
 figuren = {
-    "w_ba": int("0000000000000000000000000000000000000000000001001111101100000000", 2),
+    "w_ba": int("0000000000000000000000000000000000000000000000001111111100000000", 2),
     "w_la": int("0000000000000000000000000000000000000000000000000000000000100100", 2),
     "w_pf": int("0000000000000000000000000000000000000000000000000000000001000010", 2),
     "w_tu": int("0000000000000000000000000000000000000000000000000000000010000001", 2),
@@ -406,14 +407,15 @@ if __name__ == '__main__':
         # --------------------------- TEST ---------------------------
         # temp = get_legale_laufer_zuge(figuren.get("w_la"), figuren, ist_weis_am_zug)
 
-    ba = get_legale_bauern_zuege(figuren.get("w_ba"), figuren, True)
-    la = get_legale_laufer_zuge(figuren.get("w_la"), figuren, True)
-    pf = get_legale_pferd_zuge(figuren.get("w_pf"), figuren, True)
-    tu = get_legale_turm_zuge(figuren.get("w_tu"), figuren, True)
-    da = get_legale_damen_zuge(figuren.get("w_da"), figuren, True)
+    ba = get_legale_bauern_zuege(figuren.get("s_ba"), figuren, False)
+    la = get_legale_laufer_zuge(figuren.get("s_la"), figuren, False)
+    pf = get_legale_pferd_zuge(figuren.get("s_pf"), figuren, False)
+    tu = get_legale_turm_zuge(figuren.get("s_tu"), figuren, False)
+    da = get_legale_damen_zuge(figuren.get("s_da"), figuren, False)
+    ko = get_legale_konig_zuge(figuren.get("s_ko"), figuren, False)
 
     # white_attack = ba | la | pf | tu | da
-    white_attack = pf
+    white_attack = ko
 
     print("Erlaubte Züge::::::::::::::::")
     print_custom_schachbrett(white_attack)

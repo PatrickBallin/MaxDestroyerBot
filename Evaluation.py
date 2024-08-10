@@ -70,6 +70,7 @@ import operator
 
 # -------------------------------------------- Hilfsvariablen ----------------------------------------------------
 laufer_end_calculation_maske = int("1000000110000001100000011000000110000001100000011000000110000001", 2)
+uber_brett_hinaus_maske = int("1111111111111111111111111111111111111111111111111111111111111111", 2)
 
 # -------------------------------------------- 1. Aufabu ----------------------------------------------------
 schachbrett_groesse = 0
@@ -295,14 +296,22 @@ def get_legale_laufer_zuge(laufer, figuren, ist_weiss_am_zug):
 
 
 def get_legale_pferd_zuge(pferd, figuren, ist_weiss_am_zug):
-    legal_moves = get_shift_movement_operation_pferd(pferd, figuren, 6, 1, operator.lshift, operator.rshift, ist_weiss_am_zug) | \
-                  get_shift_movement_operation_pferd(pferd, figuren, 10, 1, operator.lshift, operator.rshift, ist_weiss_am_zug) | \
-                  get_shift_movement_operation_pferd(pferd, figuren, 15, 2, operator.lshift, operator.rshift, ist_weiss_am_zug) | \
-                  get_shift_movement_operation_pferd(pferd, figuren, 17, 2, operator.lshift, operator.rshift, ist_weiss_am_zug) | \
-                  get_shift_movement_operation_pferd(pferd, figuren, 6, 1, operator.rshift, operator.lshift, ist_weiss_am_zug) | \
-                  get_shift_movement_operation_pferd(pferd, figuren, 10, 1, operator.rshift, operator.lshift, ist_weiss_am_zug) | \
-                  get_shift_movement_operation_pferd(pferd, figuren, 15, 2, operator.rshift, operator.lshift, ist_weiss_am_zug) | \
-                  get_shift_movement_operation_pferd(pferd, figuren, 17, 2, operator.rshift, operator.lshift, ist_weiss_am_zug)
+    legal_moves = get_shift_movement_operation_pferd(pferd, figuren, 6, 1, operator.lshift, operator.rshift,
+                                                     ist_weiss_am_zug) | \
+                  get_shift_movement_operation_pferd(pferd, figuren, 10, 1, operator.lshift, operator.rshift,
+                                                     ist_weiss_am_zug) | \
+                  get_shift_movement_operation_pferd(pferd, figuren, 15, 2, operator.lshift, operator.rshift,
+                                                     ist_weiss_am_zug) | \
+                  get_shift_movement_operation_pferd(pferd, figuren, 17, 2, operator.lshift, operator.rshift,
+                                                     ist_weiss_am_zug) | \
+                  get_shift_movement_operation_pferd(pferd, figuren, 6, 1, operator.rshift, operator.lshift,
+                                                     ist_weiss_am_zug) | \
+                  get_shift_movement_operation_pferd(pferd, figuren, 10, 1, operator.rshift, operator.lshift,
+                                                     ist_weiss_am_zug) | \
+                  get_shift_movement_operation_pferd(pferd, figuren, 15, 2, operator.rshift, operator.lshift,
+                                                     ist_weiss_am_zug) | \
+                  get_shift_movement_operation_pferd(pferd, figuren, 17, 2, operator.rshift, operator.lshift,
+                                                     ist_weiss_am_zug)
 
     return legal_moves
 
@@ -321,22 +330,49 @@ def get_legale_turm_zuge(turm, figuren, ist_weiss_am_zug):
     horizontales_movement = 0
 
     if lshift > 0:
-        horizontales_movement = get_shift_movement_operation(turm, figuren, 1, operator.lshift, ist_weiss_am_zug, "_tu",2 ** (math.log2(turm) - rshift), 2 ** (math.log2(turm) + lshift))
+        horizontales_movement = get_shift_movement_operation(turm, figuren, 1, operator.lshift, ist_weiss_am_zug, "_tu",
+                                                             2 ** (math.log2(turm) - rshift),
+                                                             2 ** (math.log2(turm) + lshift))
     if rshift > 0:
-        horizontales_movement = horizontales_movement | get_shift_movement_operation(turm, figuren, 1, operator.rshift, ist_weiss_am_zug, "_tu",
-                                           2 ** (math.log2(turm) - rshift),
-                                           2 ** (math.log2(turm) + lshift))
+        horizontales_movement = horizontales_movement | get_shift_movement_operation(turm, figuren, 1, operator.rshift,
+                                                                                     ist_weiss_am_zug, "_tu",
+                                                                                     2 ** (math.log2(turm) - rshift),
+                                                                                     2 ** (math.log2(turm) + lshift))
 
     legale_turm_zuge = vertikales_movement | horizontales_movement
     return legale_turm_zuge
 
 
 def get_legale_damen_zuge(dame, figuren, ist_weiss_am_zug):
-    return get_legale_laufer_zuge(dame, figuren, ist_weiss_am_zug) | get_legale_turm_zuge(dame, figuren, ist_weiss_am_zug)
+    return get_legale_laufer_zuge(dame, figuren, ist_weiss_am_zug) | get_legale_turm_zuge(dame, figuren,
+                                                                                          ist_weiss_am_zug)
 
 
-def get_legale_konig_zuge():
-    pass
+def get_legale_konig_zuge(konig, figuren, ist_weiss_am_zug):
+    # Same as pferde movement
+    legal_moves = get_shift_movement_operation_pferd(konig, figuren, 1, 0, operator.lshift, operator.rshift,
+                                                     ist_weiss_am_zug) | get_shift_movement_operation_pferd(konig,
+                                                                                                            figuren, 1,
+                                                                                                            0,
+                                                                                                            operator.rshift,
+                                                                                                            operator.lshift,
+                                                                                                         ist_weiss_am_zug)
+
+    legal_moves_down = get_shift_movement_operation_pferd(konig, figuren, 7, 1, operator.lshift, operator.rshift,
+                                                          ist_weiss_am_zug) | \
+                       get_shift_movement_operation_pferd(konig, figuren, 8, 1, operator.lshift, operator.rshift,
+                                                          ist_weiss_am_zug) | \
+                       get_shift_movement_operation_pferd(konig, figuren, 9, 1, operator.lshift, operator.rshift,
+                                                          ist_weiss_am_zug)
+
+    legal_moves_up = get_shift_movement_operation_pferd(konig, figuren, 7, 1, operator.rshift, operator.lshift,
+                                                          ist_weiss_am_zug) | \
+                       get_shift_movement_operation_pferd(konig, figuren, 8, 1, operator.rshift, operator.lshift,
+                                                          ist_weiss_am_zug) | \
+                       get_shift_movement_operation_pferd(konig, figuren, 9, 1, operator.rshift, operator.lshift,
+                                                          ist_weiss_am_zug)
+
+    return legal_moves | legal_moves_up | legal_moves_down
 
 
 # ------------------------------------- Help Funktionen für Figuren movement ------------------------------------
@@ -373,7 +409,8 @@ def get_shift_movement_operation(figur, figuren, shift_number, operator, ist_wei
     return legale_zuge
 
 
-def get_shift_movement_operation_pferd(pferd , figuren, shift_numer, byte_shifts, operator_shift, controll_operator_shift, ist_weiss_am_zug):
+def get_shift_movement_operation_pferd(pferd, figuren, shift_numer, byte_shifts, operator_shift,
+                                       controll_operator_shift, ist_weiss_am_zug):
     legaler_zug = 0
     schachbrett = get_schachbrett(figuren)
     temp_figur = pferd
@@ -394,7 +431,7 @@ def get_shift_movement_operation_pferd(pferd , figuren, shift_numer, byte_shifts
                 if temp_figur & get_weis_figuren_maske(figuren):
                     legaler_zug = temp_figur
 
-    return legaler_zug
+    return legaler_zug & uber_brett_hinaus_maske
 
 
 # ------------------------------------- Figuren Zug ausführungs Funktionen ------------------------------------
