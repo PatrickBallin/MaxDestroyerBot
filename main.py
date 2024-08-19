@@ -56,18 +56,6 @@ figuren = {
     "s_ko": int("0000100000000000000000000000000000000000000000000000000000000000", 2)
 }
 
-
-# # 4 * 4 Daten:
-# figuren = {
-#     "w_ba": int("0000000000001111", 2),
-#     "w_ko": int("0000000000010000", 2),
-#     # weiss_pferde = int("101000000", 2)
-#
-#     "s_ba": int("1111000000000000", 2),
-#     "s_ko": int("0000100000000000", 2)
-#     # schwarz_pferde = int("000000101", 2)
-# }
-
 # Schleifen gehen keys durch --> Keys löschen wenn Figur nicht mehr auf Brett
 weiss_keys = ["w_ba", "w_la", "w_pf", "w_tu", "w_da", "w_ko"]
 schwarz_keys = ["s_ba", "s_la", "s_pf", "s_tu", "s_da", "s_ko"]
@@ -383,40 +371,38 @@ if __name__ == '__main__':
     init_schachbrett()
     init_bot(schachbrett_groesse, schachbrett_groesse_wurzel, figuren)
 
-    # while True:
-    print_schachbrett()
-    print()
-    print_schachbrett_mit_bezeichnungen()
+    while True:
+        print_schachbrett()
+        print()
+        print_schachbrett_mit_bezeichnungen()
 
+        start_time = time.time()
 
-        # start_time = time.time()
-        #
-        # # Zeigt den Besten move an
-        # beast_get_best_move(figuren, ist_weis_am_zug, zug_tiefe=3)
-        # end_time = time.time()
-        #
-        #
-        # print("Calculation Time: ", round(end_time - start_time, 3), " Sekunden")
-        # zug = get_zug_eingabe()
-        # bit_zug_auswahl = get_bit_wert_von_input(zug[0])
-        # bit_zug_ziel = get_bit_wert_von_input(zug[1])
-        #
-        # bewege_figur(bit_zug_auswahl, bit_zug_ziel)
-        # aktualisiere_brett_und_zug()
+        # Zeigt den Besten move an
+        beast_get_best_move(figuren, ist_weis_am_zug, zug_tiefe=1)
+        end_time = time.time()
 
-        # --------------------------- TEST ---------------------------
-        # temp = get_legale_laufer_zuge(figuren.get("w_la"), figuren, ist_weis_am_zug)
+        print("Calculation Time: ", round(end_time - start_time, 3), " Sekunden")
+        zug = get_zug_eingabe()
+        bit_zug_auswahl = get_bit_wert_von_input(zug[0])
+        bit_zug_ziel = get_bit_wert_von_input(zug[1])
 
-    ba = get_legale_bauern_zuege(figuren.get("s_ba"), figuren, False)
-    la = get_legale_laufer_zuge(figuren.get("s_la"), figuren, False)
-    pf = get_legale_pferd_zuge(figuren.get("s_pf"), figuren, False)
-    tu = get_legale_turm_zuge(figuren.get("s_tu"), figuren, False)
-    da = get_legale_damen_zuge(figuren.get("s_da"), figuren, False)
-    ko = get_legale_konig_zuge(figuren.get("s_ko"), figuren, False)
+        bewege_figur(bit_zug_auswahl, bit_zug_ziel)
+        aktualisiere_brett_und_zug()
 
-    # white_attack = ba | la | pf | tu | da
-    white_attack = ko
+    # --------------------------- TEST ---------------------------
+    # temp = get_legale_laufer_zuge(figuren.get("w_la"), figuren, ist_weis_am_zug)
 
-    print("Erlaubte Züge::::::::::::::::")
-    print_custom_schachbrett(white_attack)
-    print("Ergebniss", bin(white_attack), " Felder: ", bin(white_attack).count("1"))
+    # ba = get_legale_bauern_zuege(figuren.get("s_ba"), figuren, False)
+    # la = get_legale_laufer_zuge(figuren.get("s_la"), figuren, False)
+    # pf = get_legale_pferd_zuge(figuren.get("s_pf"), figuren, False)
+    # tu = get_legale_turm_zuge(figuren.get("s_tu"), figuren, False)
+    # da = get_legale_damen_zuge(figuren.get("s_da"), figuren, False)
+    # ko = get_legale_konig_zuge(figuren.get("s_ko"), figuren, False)
+    #
+    # # white_attack = ba | la | pf | tu | da
+    # white_attack = ko
+    #
+    # print("Erlaubte Züge::::::::::::::::")
+    # print_custom_schachbrett(white_attack)
+    # print("Ergebniss", bin(white_attack), " Felder: ", bin(white_attack).count("1"))
