@@ -110,6 +110,8 @@ pferd_gewichtung = 3
 turm_gewichtung = 5
 damen_gewichtung = 8
 
+################# Weights #################
+
 
 def evaluiere_schachbrett(figuren):
     gesamtwert_weiss = 0
@@ -154,8 +156,6 @@ def evaluiere_schachbrett(figuren):
                 number_of_bits = bin(figuren[figur]).count("1")
                 gesamtwert_schwarz += number_of_bits * damen_gewichtung
 
-    # return gesamtwert_weiss & Gesamtwert_schwarz ( !!! Bester Zug ist mit der Größten Differnez !!!)
-    print("Weiss Wert: ", gesamtwert_weiss, " Schwarz Wert: ", gesamtwert_schwarz)
     return gesamtwert_weiss - gesamtwert_schwarz
 
 
@@ -248,13 +248,12 @@ def evaluiere_schachbrett(figuren):
 # for figur in figuren
 # if turn in figur
 # welche figur? "_ba"
-#   w_ba : 000000 0000000 000000 1111111 --> get highest n higehst bit
+#   w_ba : 000000 0000000 000000 1111111 --> get higest bit und von da an runter counten
+
 
 # TODO: !!!!!!!!!!!!!!!!!!! Neue Funktion !!!!!!!!!!!!!!!!!!!
 def berechne_besten_zug(figuren, ist_weiss_am_zug, zug_tiefe):
     best_move_figuren = 0
-    best_move_wert = 0
-    global counter
 
     if ist_weiss_am_zug:
         turn = "w_"
@@ -274,54 +273,48 @@ def berechne_besten_zug(figuren, ist_weiss_am_zug, zug_tiefe):
                     if bsb_iterator_bauern & figuren[figur]:
                         bauer = bsb_iterator_bauern & figuren[figur]  # bauer = 0000 1000
                         bsb_iterator_bauern_zuege = biggest_single_bit_number  # Um über jeden Möglichen Zug der Figur zu iterriern
-
-                        # Get alle legalen Züge von diesem einzelnen Bauern
                         legale_bauer_zuge = get_legale_bauern_zuege(bauer, figuren, ist_weiss_am_zug)
-                        if legale_bauer_zuge is None:
-                            break
+
+                        print("Legale Züge von Bauer")
+                        print_custom_schachbrett(legale_bauer_zuge)
 
                         # 1. Itiere Über jeden Zug und berechne Figuren
                         while bsb_iterator_bauern_zuege > 0:
                             if bsb_iterator_bauern_zuege & legale_bauer_zuge:
+                                print("Anscheined Legaler Move: ", " --------- VON ---------")
+                                print_custom_schachbrett(bsb_iterator_bauern)
+                                print("")
+                                print_custom_schachbrett(bsb_iterator_bauern_zuege)
+                                print("#######################")
                                 # dann handelt es sich um einen legalen Zug vom Bauern
                                 # Zug ist von bsb_iterator_bauern nach bsb_iterator_bauern_zuege
                                 # Berechne Figuren von diesem Zug
-                                temp_figuren = bewege_bauer(bsb_iterator_bauern, bsb_iterator_bauern_zuege,
-                                                            dict(figuren), ist_weiss_am_zug)
+                                # print("What is Figuren???: ", figuren)
+                                temp_figuren = bewege_bauer(bsb_iterator_bauern, bsb_iterator_bauern_zuege, dict(figuren), ist_weiss_am_zug)
 
                                 # Evaluiere Wert von Zug
                                 zug_wert = evaluiere_schachbrett(temp_figuren)
-
-                                # print("Zug Wert von ", "weis: " if ist_weiss_am_zug else "Black: ", zug_wert)
-                                if zug_wert >= 1:
-                                    print("Zugwert: ", zug_wert, "figs: ", [bin(i) for i in temp_figuren.values()])
-
-                                # TODO: 2. Tiefe einbauen Versuch: 1
-                                if zug_tiefe > 1 and counter < 3:
-                                    # Berechne daraufgolgende Züge
-                                    best_folgender_zug = berechne_besten_zug(temp_figuren, not ist_weiss_am_zug,
-                                                                             zug_tiefe - 1)
-                                    best_move_gegner = best_folgender_zug[0]
-
-                                    # Berechne Zug + bester folgender gegnerischer Zug
-                                    # und return die höchste Summe für weis und niedrigste für schwarz
-
-                                    zug_wert = zug_wert + best_move_gegner
-                                    counter += 1
 
                                 # weiß will möglichst hohen Wert > 0
                                 if ist_weiss_am_zug:
                                     if zug_wert > best_move_wert:
                                         best_move_wert = zug_wert
                                         best_move_figuren = temp_figuren
-                                        print("Best White: ", best_move_wert,
-                                              [bin(i) for i in best_move_figuren.values()])
-                                # schwarz will möglichst niedrigen Wert < 0
+                                        print("BBBBBBBBBBBBBBBBBB Move Wert Weis WERT: ", best_move_wert)
+                                        print("Bester Move Figuren: ")
+                                        for bitch in best_move_figuren:
+                                            print("Name: ", bitch)
+                                            print_custom_schachbrett(best_move_figuren[bitch])
                                 else:
                                     if zug_wert < best_move_wert:
-                                        print("Bester Move Wert Schwarz: tiefe", zug_tiefe, best_move_wert)
                                         best_move_wert = zug_wert
                                         best_move_figuren = temp_figuren
+                                        print("BBBBBBBBBBBBBBBBBB Move Wert Schwarz WERT: ", best_move_wert)
+                                        print("Bester Move Figuren: ")
+                                        figs = 0
+                                        for bitch in best_move_figuren:
+                                            figs = figs | best_move_figuren[bitch]
+                                        print_custom_schachbrett(figs)
 
                             # Nächster Zug
                             bsb_iterator_bauern_zuege = bsb_iterator_bauern_zuege >> 1
@@ -330,6 +323,10 @@ def berechne_besten_zug(figuren, ist_weiss_am_zug, zug_tiefe):
                     bsb_iterator_bauern = bsb_iterator_bauern >> 1
 
     # print("Return best move Wert Farbe ", "weiß" if ist_weiss_am_zug else "schwarz", best_move_wert)
+    print("********************** Function Return **********************")
+    for bitch in best_move_figuren:
+        print("Name: ", bitch)
+        print_custom_schachbrett(best_move_figuren[bitch])
     return [best_move_wert, best_move_figuren, figuren]
 
 
@@ -645,9 +642,9 @@ def get_weis_figuren_maske(figuren):
 
 
 # ------------------------------------- Figuren & Schachbrett zu Koordinaten -------------------------------
-def get_koordinaten_format(best_move, ist_weiss_am_zug):
-    figuren = best_move[2]
-    best_move_figuren = best_move[1]
+def get_koordinaten_format(aktuelle_figuren, ziel_position_figuren, ist_weiss_am_zug):
+    figuren = aktuelle_figuren
+    best_move_figuren = ziel_position_figuren
     temp = 97 + schachbrett_groesse_wurzel + schachbrett_groesse_wurzel - 1
     counter1 = 0
     counter2 = 0
@@ -689,11 +686,28 @@ def get_koordinaten_format(best_move, ist_weiss_am_zug):
     return [chr(start_koordinate_buchstaben), counter1, chr(ziel_koordinaten_buchstaben), counter2]
 
 
+def print_custom_schachbrett(darstellung):
+    bit_number = biggest_single_bit_number
+    schachbrett_darstellung = []
+
+    while bit_number > 0:
+        if (darstellung & bit_number) > 0:
+            schachbrett_darstellung.append(1)
+        else:
+            schachbrett_darstellung.append(0)
+        bit_number = bit_number >> 1
+
+    for i in range(0, schachbrett_groesse, schachbrett_groesse_wurzel):
+        print(schachbrett_darstellung[i: i + schachbrett_groesse_wurzel], end="")
+        if i % schachbrett_groesse_wurzel == 0:
+            print()
+
+
 # -------------------------------------------- Bester Zug Funktion --------------------------------------------
 def beast_get_best_move(figuren, ist_weiss_am_zug, zug_tiefe):
     # --- Best Move ---
     best_move = berechne_besten_zug(figuren, ist_weiss_am_zug, zug_tiefe)
-    best_move_koordinaten = get_koordinaten_format(best_move, ist_weiss_am_zug)
+    best_move_koordinaten = get_koordinaten_format(best_move[2], best_move[1], ist_weiss_am_zug)
 
     print("-------- Max Killer Bot --------")
     print("Bester Move Wert: ", best_move[0])

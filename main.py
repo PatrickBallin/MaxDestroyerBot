@@ -14,6 +14,8 @@ import time
 from Evaluation import beast_get_best_move
 from Evaluation import init_bot
 
+from Evaluation import bewege_bauer
+from Evaluation import get_legale_bauern_zuege
 from Evaluation import get_legale_laufer_zuge
 from Evaluation import get_legale_pferd_zuge
 from Evaluation import get_legale_turm_zuge
@@ -402,7 +404,11 @@ if __name__ == '__main__':
     #
     # # white_attack = ba | la | pf | tu | da
     # white_attack = ko
+    # temp_bau = int("0000000000000000000000000000000000000000001000000000000000000000", 2)
     #
+    # white_attack = get_legale_bauern_zuege(temp_bau, figuren, ist_weis_am_zug)
     # print("Erlaubte Züge::::::::::::::::")
     # print_custom_schachbrett(white_attack)
+    # print_schachbrett_mit_bezeichnungen()
+    #
     # print("Ergebniss", bin(white_attack), " Felder: ", bin(white_attack).count("1"))
