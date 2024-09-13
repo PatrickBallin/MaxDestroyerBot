@@ -12,7 +12,11 @@ import operator
 # import math
 import time
 
-from Evaluation import beast_get_best_move
+import pygame
+
+from Evaluation import get_legale_zuege, get_angriffs_maske, minimax, get_big_babba_move, \
+    bewege_figur, get_weis_figuren_maske, get_schwarz_figuren_maske, get_koordinaten_format, is_king_in_schach, \
+    is_schachmatt
 from Evaluation import init_bot
 
 # from Evaluation import bewege_bauer
@@ -23,9 +27,11 @@ from Evaluation import get_legale_turm_zuge
 from Evaluation import get_legale_damen_zuge
 from Evaluation import get_legale_bauern_zuege
 from Evaluation import get_legale_konig_zuge
+
+from Chessboard import update_board, init_this_thing
+
 # from Evaluation import get_schwarz_figuren_maske
 # from Evaluation import get_weis_figuren_maske
-
 
 
 # -------------------------------------------- 1. Aufabu ----------------------------------------------------
@@ -42,20 +48,34 @@ biggest_single_bit_number = 0
 ist_weis_am_zug = True
 ist_zug_legal = True
 
-zug_tiefe = 5
-
 # ---- Figuren ----
 
 # 8 * 8 Daten:
+figuren = {
+    "w_ba": int("0000000000000000000000000000000000000000000000001111111100000000", 2),
+    "w_la": int("0000000000000000000000000000000000000000000000000000000000100100", 2),
+    "w_pf": int("0000000000000000000000000000000000000000000000000000000001000010", 2),
+    "w_tu": int("0000000000000000000000000000000000000000000000000000000010000001", 2),
+    "w_da": int("0000000000000000000000000000000000000000000000000000000000010000", 2),
+    "w_ko": int("0000000000000000000000000000000000000000000000000000000000001000", 2),
+
+    "s_ba": int("0000000011111111000000000000000000000000000000000000000000000000", 2),
+    "s_la": int("0010010000000000000000000000000000000000000000000000000000000000", 2),
+    "s_pf": int("0100001000000000000000000000000000000000000000000000000000000000", 2),
+    "s_tu": int("1000000100000000000000000000000000000000000000000000000000000000", 2),
+    "s_da": int("0001000000000000000000000000000000000000000000000000000000000000", 2),
+    "s_ko": int("0000100000000000000000000000000000000000000000000000000000000000", 2)
+}
+
 # figuren = {
 #     "w_ba": int("0000000000000000000000000000000000000000000000001111111100000000", 2),
-#     "w_la": int("0000000000000000000000000000000000000000000000000000000000100100", 2),
+#     "w_la": int("0000000000000000000000000000000010000000000000000000000000100000", 2),
 #     "w_pf": int("0000000000000000000000000000000000000000000000000000000001000010", 2),
 #     "w_tu": int("0000000000000000000000000000000000000000000000000000000010000001", 2),
 #     "w_da": int("0000000000000000000000000000000000000000000000000000000000010000", 2),
 #     "w_ko": int("0000000000000000000000000000000000000000000000000000000000001000", 2),
 #
-#     "s_ba": int("0000000011111111000000000000000000000000000000000000000000000000", 2),
+#     "s_ba": int("0000000011101111000000000000000000000000000000000000000000000000", 2),
 #     "s_la": int("0010010000000000000000000000000000000000000000000000000000000000", 2),
 #     "s_pf": int("0100001000000000000000000000000000000000000000000000000000000000", 2),
 #     "s_tu": int("1000000100000000000000000000000000000000000000000000000000000000", 2),
@@ -64,7 +84,7 @@ zug_tiefe = 5
 # }
 
 # figuren = {
-#     "w_ba": int("0000000000001110000000000000000000000000000000000000000000000000", 2),
+#     "w_ba": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
 #     "w_la": int("0000000000000000000000000000000000000000000000000000000000100100", 2),
 #     "w_pf": int("0000000000000000000000000000000000000000000000000000000001000010", 2),
 #     "w_tu": int("0000000000000000000000000000000000000000000000100000000000000000", 2),
@@ -79,21 +99,90 @@ zug_tiefe = 5
 #     "s_ko": int("0000100000000000000000000000000000000000000000000000000000000000", 2)
 # }
 
-figuren = {
-    "w_ba": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
-    "w_la": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
-    "w_pf": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
-    "w_tu": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
-    "w_da": int("0000000000000000000000000000000000000000000000000000000000000110", 2),
-    "w_ko": int("0000000000000000000000000000000000000000000000000000000000001000", 2),
+# figuren = {
+#     "w_ba": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
+#     "w_la": int("0000000000000000000100000000000000000000000000000000000000000000", 2),
+#     "w_pf": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
+#     "w_tu": int("0000000000000000000000000000000000000000000000000000000000001100", 2),
+#     "w_da": int("0000000000000000000000000000000000000000000000000000000001000000", 2),
+#     "w_ko": int("0000000000000000000000000000000000000000000000000000000010000000", 2),
+#
+#     "s_ba": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
+#     "s_la": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
+#     "s_pf": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
+#     "s_tu": int("0010000100000000000000000000000000000000000000000000000000000000", 2),
+#     "s_da": int("0000010000000000000000000000000000000000000000000000000000000000", 2),
+#     "s_ko": int("0000001000000000000000000000000000000000000000000000000000000000", 2)
+# }
 
-    "s_ba": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
-    "s_la": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
-    "s_pf": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
-    "s_tu": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
-    "s_da": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
-    "s_ko": int("0000000100000000000000000000000000000000000000000000000000000000", 2)
-}
+# figuren = {
+#     "w_ba": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
+#     "w_la": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
+#     "w_pf": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
+#     "w_tu": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
+#     "w_da": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
+#     "w_ko": int("0010000000000000000000000000000000000000000000000000000000000000", 2),
+#
+#     "s_ba": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
+#     "s_la": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
+#     "s_pf": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
+#     "s_tu": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
+#     "s_da": int("0000000000000000100000000000000000000000000000000000000000000000", 2),
+#     "s_ko": int("0000000000000000000100000000000000000000000000000000000000000000", 2)
+# }
+
+# figuren = {
+#     "w_ba": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
+#     "w_la": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
+#     "w_pf": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
+#     "w_tu": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
+#     "w_da": int("0000000000000000000000000100000000000000000000000000000000000000", 2),
+#     "w_ko": int("0000000000000000000100000000000000000000000000000000000000000000", 2),
+#
+#     "s_ba": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
+#     "s_la": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
+#     "s_pf": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
+#     "s_tu": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
+#     "s_da": int("0000000000000000000000000000000000000000000000000000000000000000", 2),
+#     "s_ko": int("1000000000000000000000000000000000000000000000000000000000000000", 2)
+# }
+
+# 0000000000000000000011111111110010100000000000000000000000000000
+# figuren = {
+#     "w_ba": int("0000000000000000000000000000000000000000000000000111111100000000", 2),
+#     "w_la": int("0000000000000000000000000000000000000000000000000000000000100100", 2),
+#     "w_pf": int("0000000000000000000000000010000000000000000000000000000001000000", 2),
+#     "w_tu": int("0000000000000000000000000000000000000000000000000000000010000001", 2),
+#     "w_da": int("0000000000000000000000000000000000000000000000000000000000010000", 2),
+#     "w_ko": int("0000000000000000000000000000000000000000000000000000000000001000", 2),
+#
+#     "s_ba": int("0000000000000000000011111111110010100000000000000000000000000000", 2),
+#     "s_la": int("0010010000000000000000000000000000000000000000000000000000000000", 2),
+#     "s_pf": int("0100001000000000000000000000000000000000000000000000000000000000", 2),
+#     "s_tu": int("1000000100000000000000000000000000000000000000000000000000000000", 2),
+#     "s_da": int("0001000000000000000000000000000000000000000000000000000000000000", 2),
+#     "s_ko": int("0000100000000000000000000000000000000000000000000000000000000000", 2)
+# }
+
+# # ------------------------------------- ENDGAME TESTING -------------------------------------
+# figuren = {
+#     "w_ba": int("0000000000000000000000001000000000000000000000000111111100000000", 2),
+#     "w_la": int("0000000000000000000000000000000000000000000000000000000000100100", 2),
+#     "w_pf": int("0000000000000000000000000010000000000000000000000000000001000010", 2),
+#     "w_tu": int("0000000000000000000000000000000000000000000000000000000010000001", 2),
+#     "w_da": int("0000000000000000000000000000000000000000000000000000000000010000", 2),
+#     "w_ko": int("0000000000000000000000000000000000000000000000000000000000001000", 2),
+#
+#     "s_ba": int("0000000000000111101110000100000000000000000000000000000000000000", 2),
+#     "s_la": int("0010010000000000000000000000000000000000000000000000000000000000", 2),
+#     "s_pf": int("0100001000000000000000000000000000000000000000000000000000000000", 2),
+#     "s_tu": int("1000000100000000000000000000000000000000000000000000000000000000", 2),
+#     "s_da": int("0001000000000000000000000000000000000000000000000000000000000000", 2),
+#     "s_ko": int("0000100000000000000000000000000000000000000000000000000000000000", 2)
+# }
+
+# ------------------------------------- ERRORS -------------------------------------
+
 
 # Schleifen gehen keys durch --> Keys löschen wenn Figur nicht mehr auf Brett
 weiss_keys = ["w_ba", "w_la", "w_pf", "w_tu", "w_da", "w_ko"]
@@ -108,84 +197,18 @@ def init_schachbrett():
     global schachbrett, figuren_schwarz, figuren_weiss, biggest_single_bit_number
 
     # Dic Figuren muss verändert werden
-    schachbrett = get_weiss_figuren_maske() | get_schwarz_figuren_maske()
+    schachbrett = get_weiss_figuren_maske() | get_schwarzz_figuren_maske()
     figuren_weiss = get_weiss_figuren_maske()
-    figuren_schwarz = get_schwarz_figuren_maske()
+    figuren_schwarz = get_schwarzz_figuren_maske()
 
-    biggest_single_bit_number = int(bin(2**(schachbrett_groesse - 1)), 2)
+    biggest_single_bit_number = int(bin(2 ** (schachbrett_groesse - 1)), 2)
 
 
 # -------------------------------------------- Figurenn Movement --------------------------------------------
-# def bewege_figur_main_funke(zug_auswahl, zug_ziel):
-#     figuren_name = ""
-#
-#     # Ist es ein Feld mit Figur darauf
-#     if schachbrett & zug_auswahl != 0:
-#         # Um welche Figur von "mir" handelt es sich (Eine Figur die weis/schwarz bewegen darf)
-#         if ist_weis_am_zug:
-#             for key in weiss_keys:
-#                 bit_wert_figur = figuren.get(key)
-#
-#                 if bit_wert_figur & zug_auswahl != 0:
-#                     # dann ist der Key die Figur die ausgewählt wurde
-#                     figuren_name = key
-#
-#         # schwarz ist am zug
-#         else:
-#             for key in schwarz_keys:
-#                 bit_wert_figur = figuren.get(key)
-#
-#                 if bit_wert_figur & zug_auswahl != 0:
-#                     # dann ist der Key die Figur die ausgewählt wurde
-#                     figuren_name = key
-#
-#         if figuren_name == "":
-#             # keine legale Figur ausgewählt
-#             return False
-#     else:
-#         # Kein legaler Zug
-#         return False
-#
-#     # Legale Auswhal an Figur
-#     # Bewege Figur sofern legaler Zug
-#     if "_ba" in figuren_name:
-#         ziehe_figur(zug_auswahl, zug_ziel, "_ba")
-#     if "_ko" in figuren_name:
-#         ziehe_figur(zug_auswahl, zug_ziel, "_ko")
-#
-#
-# def ziehe_figur(zug_auswahl, zug_ziel, figurname):
-#     if ist_weis_am_zug:
-#         # wurde Figur genommen?
-#         if zug_ziel & get_schwarz_figuren_maske() != 0:
-#             for key in schwarz_keys:
-#                 if figuren[key] & zug_ziel != 0:
-#                     # Dann ist key Figur die genommen wurde
-#                     # lösche Gegner Figur
-#                     figuren[key] = figuren.get(key) ^ zug_ziel
-#
-#         # aktualisiere gezogene Figur
-#         temp = figuren.get("w" + figurname) ^ zug_auswahl
-#         figuren["w" + figurname] = temp | zug_ziel
-#     else:
-#         # schwarzer zug
-#         # wurde Figur genommen?
-#         if zug_ziel & get_weiss_figuren_maske() != 0:
-#             for key in weiss_keys:
-#                 if figuren[key] & zug_ziel != 0:
-#                     # Dann ist key Figur die genommen wurde
-#                     # lösche Gegner Figur
-#                     figuren[key] = figuren.get(key) ^ zug_ziel
-#
-#         # aktualisiere gezogene Figur
-#         temp = figuren.get("s" + figurname) ^ zug_auswahl
-#         figuren["s" + figurname] = temp | zug_ziel
-
 def bewege_figur_ineffektiv(zug_start_pos, zug_ziel_pos, figuren, ist_weis_am_zug):
-
     if ist_weis_am_zug:
         # Wurde eine Figur genommen?
-        if zug_ziel_pos & get_schwarz_figuren_maske():
+        if zug_ziel_pos & get_schwarzz_figuren_maske():
             # Figur wurde genommen --> Von jeder Geg Fig. bit dort löschen
             if figuren["s_ba"] & zug_ziel_pos:
                 figuren["s_ba"] = zug_ziel_pos ^ figuren["s_ba"]
@@ -258,75 +281,6 @@ def bewege_figur_ineffektiv(zug_start_pos, zug_ziel_pos, figuren, ist_weis_am_zu
     return figuren
 
 
-# -------------------------------------------- Figuren Legale Züge --------------------------------------------
-# TODO: Kann man löschen
-# def get_legale_bauern_zuege(zug_auswahl):
-#     legale_bauern_zuge = 0
-#
-#     # Möglichkeiten an Bauern züge
-#     if ist_weis_am_zug:
-#         # normal fall weis Bauer bewegt sich um eins nach vorne
-#         # Steht etwas auf diesem Feld
-#         if (zug_auswahl << schachbrett_groesse_wurzel) & schachbrett == 0:
-#             legale_bauern_zuge = zug_auswahl << schachbrett_groesse_wurzel
-#
-#         # Doppel Sprung
-#         if (zug_auswahl << (schachbrett_groesse_wurzel * 2) | (zug_auswahl << schachbrett_groesse_wurzel)) & schachbrett == 0:
-#             # falls der Bauer am Anfang steht
-#             if zug_auswahl & doppel_move_weis_maske:
-#                 temp = zug_auswahl << (schachbrett_groesse_wurzel * 2)
-#                 legale_bauern_zuge = legale_bauern_zuge | temp
-#
-#         # Attack Move
-#         gegnerische_figuren = get_schwarz_figuren_maske()
-#
-#         # Fall Angriff: Steht diagonal links ein Gegner dann füge zuege hinzu
-#         angriff_diagonal_links = zug_auswahl << (schachbrett_groesse_wurzel + 1)
-#
-#         # TODO: Übers BRett schlagen ist möglich aber nicht im Bot
-#         # Steht eine Gengerische Figur links diagonal
-#         if angriff_diagonal_links & gegnerische_figuren != 0:
-#             legale_bauern_zuge = legale_bauern_zuge | angriff_diagonal_links
-#
-#         # Fall Angriff: Steht diagonal rechts ein Gegner dann füge zuege hinzu
-#         angriff_diagonal_rechts = zug_auswahl << (schachbrett_groesse_wurzel - 1)
-#
-#         if angriff_diagonal_rechts & gegnerische_figuren != 0:
-#             legale_bauern_zuge = legale_bauern_zuge | angriff_diagonal_rechts
-#
-#     else:
-#         # normal fall schwarz Bauer bewegt sich um eins nach vorne
-#         # Steht etwas auf diesem Feld
-#         if (zug_auswahl >> schachbrett_groesse_wurzel) & schachbrett == 0:
-#             legale_bauern_zuge = zug_auswahl >> schachbrett_groesse_wurzel
-#
-#         # Doppel Sprung
-#         if ((zug_auswahl >> (schachbrett_groesse_wurzel * 2)) | zug_auswahl >> schachbrett_groesse_wurzel) & schachbrett == 0:
-#             # falls der Bauer am Anfang steht
-#             if zug_auswahl & doppel_move_schwarz_maske:
-#                 temp = zug_auswahl >> (schachbrett_groesse_wurzel * 2)
-#                 legale_bauern_zuge = legale_bauern_zuge | temp
-#
-#         # Attack Move
-#         gegnerische_figuren = get_weiss_figuren_maske()
-#
-#         # Fall Angriff: Steht diagonal links ein Gegner dann füge zuege hinzu
-#         angriff_diagonal_links = zug_auswahl >> (schachbrett_groesse_wurzel + 1)
-#
-#         # Steht eine Gengerische Figur links diagonal
-#
-#         if angriff_diagonal_links & gegnerische_figuren != 0:
-#             legale_bauern_zuge = legale_bauern_zuge | angriff_diagonal_links
-#
-#         # Fall Angriff: Steht diagonal rechts ein Gegner dann füge zuege hinzu
-#         angriff_diagonal_rechts = zug_auswahl >> (schachbrett_groesse_wurzel - 1)
-#
-#         if angriff_diagonal_rechts & gegnerische_figuren != 0:
-#             legale_bauern_zuge = legale_bauern_zuge | angriff_diagonal_rechts
-#
-#     return legale_bauern_zuge
-
-
 # -------------------------------------- Daten Funktionen --------------------------------------------------
 def aktualisiere_brett_und_zug():
     global schachbrett, ist_weis_am_zug
@@ -349,7 +303,7 @@ def aktualisiere_brett_und_zug():
         schachbrett = brettstand
 
         # Figuren aktualisiern
-        figuren_schwarz = get_schwarz_figuren_maske()
+        figuren_schwarz = get_schwarzz_figuren_maske()
         figuren_weiss = get_weiss_figuren_maske()
 
         # Turns ändern
@@ -359,7 +313,7 @@ def aktualisiere_brett_und_zug():
             ist_weis_am_zug = True
 
 
-def get_schwarz_figuren_maske():
+def get_schwarzz_figuren_maske():
     schwarz_figuren_maske = 0
 
     for key in schwarz_keys:
@@ -377,10 +331,18 @@ def get_weiss_figuren_maske():
     return weiss_figuren_maske
 
 
+def aktualisiere_figuren(new_figuren):
+    global figuren, schachbrett, ist_weis_am_zug
+
+    figuren = dict(new_figuren)
+    schachbrett = get_weiss_figuren_maske() | get_schwarzz_figuren_maske()
+    ist_weis_am_zug = not ist_weis_am_zug
+
+
 # -------------------------------------- Bewegungs Hilfsfunktion ------------------------------------------
-def get_bit_wert_von_input(figur_auswahl):   # string "a3" --> "b3"  || a->h & 1->8
+def get_bit_wert_von_input(figur_auswahl):  # string "a3" --> "b3"  || a->h & 1->8
     position_bit_nummber = biggest_single_bit_number
-    auswahl_alphabet_nummer = ord(figur_auswahl[0]) - 96    # a = 1, b = 2...
+    auswahl_alphabet_nummer = ord(figur_auswahl[0]) - 96  # a = 1, b = 2...
     auswahl_feldnummber = figur_auswahl[1]
 
     # Fall b2
@@ -430,7 +392,7 @@ def get_zug_eingabe():
 
 # -------------------------------------------- Ausgabe ----------------------------------------------------
 def print_schachbrett():
-    bit_number = int(bin(2**(schachbrett_groesse - 1)), 2)
+    bit_number = int(bin(2 ** (schachbrett_groesse - 1)), 2)
     schachbrett_darstellung = []
 
     while bit_number > 0:
@@ -467,7 +429,7 @@ def print_schachbrett_mit_bezeichnungen():
     schachbrett_darstellung_mit_bezeichnungen = [" 0  " for x in range(schachbrett_groesse)]
 
     for figur in figuren:
-        bit_number = int(bin(2**(schachbrett_groesse - 1)), 2)
+        bit_number = int(bin(2 ** (schachbrett_groesse - 1)), 2)
         for i in range(schachbrett_groesse):
             if figuren[figur] & bit_number:
                 schachbrett_darstellung_mit_bezeichnungen[i] = figur
@@ -483,7 +445,7 @@ def print_custom_schachbrett_mit_bezeichnungen(figuren):
     schachbrett_darstellung_mit_bezeichnungen = [" 0  " for x in range(schachbrett_groesse)]
 
     for figur in figuren:
-        bit_number = int(bin(2**(schachbrett_groesse - 1)), 2)
+        bit_number = int(bin(2 ** (schachbrett_groesse - 1)), 2)
         for i in range(schachbrett_groesse):
             if figuren[figur] & bit_number:
                 schachbrett_darstellung_mit_bezeichnungen[i] = figur
@@ -495,82 +457,293 @@ def print_custom_schachbrett_mit_bezeichnungen(figuren):
             print()
 
 
+def get_legale_zug_darstellung(zug_formatted):
+    zug_maske = 0
+
+    for zug in zug_formatted:
+        zug_maske = zug_maske | zug[1]
+
+    return zug_maske
+
+
 # -------------------------------------------- Main Funktion ----------------------------------------------------
 if __name__ == '__main__':
     testing = 0
     set_schachbrett_groesse(64, 8)
     print("Schachfeld:")
     init_schachbrett()
+    win = 0
     init_bot(schachbrett_groesse, schachbrett_groesse_wurzel, figuren)
     zug_counter = 0
+    time_adder = 0
 
+    tiefen_berechung = 1
+
+    # ---------------------------------------------------------- BOTOOOO START ----------------------------------------------------------
     if testing == 0:
+        # Chessboard represnation
+        pygame.init()
+        init_this_thing()
+        pygame.time.Clock().tick(10)  # Clock to control the frame rate
+
         while True:
-            print_schachbrett()
-            print()
-            print_schachbrett_mit_bezeichnungen()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+       # while True:
+            zug_counter = zug_counter + 1
+            update_board(figuren)
+
+            # print_schachbrett()
+            # print()
+            # print_schachbrett_mit_bezeichnungen()
+
+            # Unterbricht wenn MATT
+            legal_zuege = get_legale_zuege(dict(figuren), ist_weis_am_zug)
+            if not legal_zuege:
+                win = 1
+                break
 
             start_time = time.time()
-
-            # dynmaische_zug_tiefe = 4 + math.floor(zug_counter / 8)
-            # print("Tiefe: ", dynmaische_zug_tiefe)
-            # Zeigt den Besten move an
-            causeImmaBeast = beast_get_best_move(figuren, ist_weis_am_zug, zug_tiefe=zug_tiefe)
+            causeImmaBeast = get_big_babba_move(figuren, ist_weis_am_zug, tiefen_berechung)
             end_time = time.time()
 
-            if causeImmaBeast == 0:
+            # print()
+            # print("+-+-+-+-+-+-+-+-+-+-+-+-+-+ Max Killer Bot +-+-+-+-+-+-+-+-+-+-+-+-+-+")
+
+            try:
+                temp_figuren = bewege_figur(causeImmaBeast[0][0], causeImmaBeast[0][1], dict(figuren), ist_weis_am_zug,
+                                            causeImmaBeast[0][3])
+            except:
+                print("An exception occurred")
                 break
-            print("Calculation Time: ", round(end_time - start_time, 3), " Sekunden")
 
-            if not ist_weis_am_zug:
-                print("-------------------------- Weiß Am Zug --------------------------")
+            # legale_zuege_print_format = get_legale_zug_darstellung(legal_zuege)
+            koordinaten = get_koordinaten_format(figuren, temp_figuren, ist_weis_am_zug)
+            time_adder += round(end_time - start_time, 3)
+            print("Zug : ", zug_counter, " Zug-Wert: ", causeImmaBeast[1], f"{koordinaten[0]}{koordinaten[1]} --> {koordinaten[2]}{koordinaten[3]}",  "|||", round(end_time - start_time, 3), " Sekunden")
+            # print()
+            # print("Legale Züge von", " Weis: " if ist_weis_am_zug  else " Schwarz")
+            # print_custom_schachbrett(legale_zuege_print_format)
+
+            # if not ist_weis_am_zug:
+            #     print("-------------------------- Weiß Am Zug --------------------------")
+            # else:
+            #     print("-------------------------- Schwarz Am Zug --------------------------")
+
+            # Winning/Draw Conditions
+            if not figuren["w_ko"] or not legal_zuege:
+                print()
+                print("*********** Schwarz gewinnt! *********** ")
+                update_board(figuren)
+                time.sleep(60)
+                break
+
+            if not figuren["s_ko"] or not legal_zuege:
+                print()
+                print("*********** Weiß gewinnt! *********** ")
+                update_board(figuren)
+                time.sleep(60)
+                break
+
+            if bin(get_weis_figuren_maske(figuren)).count("1") == 1 and bin(get_schwarz_figuren_maske(figuren)).count(
+                    "1") == 1:
+                print()
+                print("***********  Draw *********** ")
+                update_board(figuren)
+                time.sleep(60)
+                break
+
+            aktualisiere_figuren(temp_figuren)
+
+        if win == 1:
+            if ist_weis_am_zug:
+                print("*********** Schwarz gewinnt! *********** ")
+                update_board(figuren)
+                print("Durchsch. Zug Zeit: ", round(time_adder / zug_counter, 3) ," Sek.")
+                time.sleep(60)
             else:
-                print("-------------------------- Schwarz Am Zug --------------------------")
-            # Lets the code run automatically
-            # zug = get_zug_eingabe()
-            # bit_zug_auswahl = get_bit_wert_von_input(zug[0])
-            # bit_zug_ziel = get_bit_wert_von_input(zug[1])
+                print("*********** Weiß gewinnt! *********** ")
+                update_board(figuren)
+                print("Durchsch. Zug Zeit: ", round(time_adder / zug_counter, 3) ," Sek.")
+                time.sleep(60)
 
-            bit_zug_auswahl = get_bit_wert_von_input("".join([str(causeImmaBeast[0]), str(causeImmaBeast[1])]))
-            bit_zug_ziel = get_bit_wert_von_input("".join([str(causeImmaBeast[2]), str(causeImmaBeast[3])]))
+    print_schachbrett_mit_bezeichnungen()
 
-            # bewege_figur_main_funke(bit_zug_auswahl, bit_zug_ziel)
-            figuren = bewege_figur_ineffektiv(bit_zug_auswahl, bit_zug_ziel, figuren, ist_weis_am_zug)
-            aktualisiere_brett_und_zug()
-
-            zug_counter += 1
-
-        if ist_weis_am_zug:
-            print("Schwarz hat gewonnen!")
-        else:
-            print("Weiß hat gewonnen!")
+    # ---------------------------------------------------------- BOTOOOO ENDE ----------------------------------------------------------
 
     if testing == 1:
         print_schachbrett()
         print_schachbrett_mit_bezeichnungen()
 
-        ko = get_legale_konig_zuge(figuren.get("w_ko"), figuren, True)
-        print("Erlaubte Züge::::::::::::::::")
+        start_time2 = time.time()
+        legal_zuege = get_legale_zuege(figuren, ist_weis_am_zug)
+        end_time2 = time.time()
 
-        print_custom_schachbrett(ko)
+        print("+-+-+-+-+-+-+-+-+-+-+-+- Erlaubte Züge +-+-+-+-+-+-+-+-+-+-+-+-")
+        print("Legale Moves: ", legal_zuege)
+        print()
+        legale_zuege_print_format = get_legale_zug_darstellung(legal_zuege)
+        print_custom_schachbrett(legale_zuege_print_format)
 
-    # --------------------------- TEST ---------------------------
-    # temp = get_legale_laufer_zuge(figuren.get("w_la"), figuren, ist_weis_am_zug)
+        print("+-+-+-+-+-+-+-+-+-+-+-+- Testing +-+-+-+-+-+-+-+-+-+-+-+-")
 
-    # ba = get_legale_bauern_zuege(figuren.get("s_ba"), figuren, False)
-    # la = get_legale_laufer_zuge(figuren.get("s_la"), figuren, False)
-    # pf = get_legale_pferd_zuge(figuren.get("s_pf"), figuren, False)
-    # tu = get_legale_turm_zuge(figuren.get("s_tu"), figuren, False)
-    # da = get_legale_damen_zuge(figuren.get("s_da"), figuren, False)
-    # ko = get_legale_konig_zuge(figuren.get("s_ko"), figuren, False)
-    #
-    # # white_attack = ba | la | pf | tu | da
-    # white_attack = ko
-    # temp_bau = int("0000000000000000000000000000000000000000001000000000000000000000", 2)
-    #
-    # white_attack = get_legale_bauern_zuege(temp_bau, figuren, ist_weis_am_zug)
-    # print("Erlaubte Züge::::::::::::::::")
-    # print_custom_schachbrett(white_attack)
-    # print_schachbrett_mit_bezeichnungen()
-    #
-    # print("Ergebniss", bin(white_attack), " Felder: ", bin(white_attack).count("1"))
+        # best_move = get_big_babba_move(figuren, ist_weis_am_zug, 3)
+
+        # da = get_legale_damen_zuge(figuren["w_da"], figuren, ist_weis_am_zug)
+        # fig_move = get_legale_damen_zuge(figuren["w_da"], figuren, ist_weis_am_zug)
+        while figuren["w_la"] > 0:
+            fig_move = get_legale_laufer_zuge(figuren["w_la"], figuren, ist_weis_am_zug)
+
+            if fig_move.bit_length() > 64:
+                print("Illegal Move")
+                print(bin(fig_move), fig_move.bit_length())
+                print_custom_schachbrett(fig_move)
+
+            figuren["w_la"] = figuren["w_la"] >> 1
+
+        # figuren = bewege_figur(best_move[0][0], best_move[0][1], dict(figuren), ist_weis_am_zug, best_move[0][3])
+        # print_custom_schachbrett_mit_bezeichnungen(figuren)
+
+        # print("LA Züge::::::::::::::::")
+        # print_custom_schachbrett(la)
+
+    if testing == 2:
+        print_schachbrett()
+        legal_zuege = get_legale_zuege(figuren, not ist_weis_am_zug)
+        print(legal_zuege)
+
+    if testing == 3:
+        pygame.init()
+
+        init_this_thing()
+        tt = 0
+
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+
+            update_board(figuren)
+            if tt == 0:
+                temp_figuren = bewege_figur(int("0000000000000000000000000000000000000000000000001111111100000000", 2), int("0000000000000000000000000000000000000010000000001111110100000000", 2), figuren, ist_weis_am_zug, "w_ba")
+
+            tt = tt + 1
+            aktualisiere_figuren(temp_figuren)
+            print_schachbrett_mit_bezeichnungen()
+            pygame.time.delay(100)  # Delay to slow down the loop for demonstration
+
+    if testing == 4:
+        print()
+        print_schachbrett_mit_bezeichnungen()
+        lz = get_legale_zuege(figuren, False)
+        print("get_legale_zuege: ", lz)
+
+        lbz = 0
+        for i in range(64):
+            iterator = 1 << i
+            if figuren["s_ba"] & iterator:
+                lbz = lbz | get_legale_bauern_zuege(iterator, figuren, False)
+
+        lbzWrong = get_legale_bauern_zuege(int("0000000000000000000100000000000000000000000000000000000000000000", 2), figuren, False)
+
+        print("Angeblich Legal Moves: ")
+        print_custom_schachbrett(lbz)
+        print("--- LBZ WRONG --- ")
+        print_custom_schachbrett(lbzWrong)
+        print()
+        # pygame.quit()
+
+    if testing == 5:
+        # Player VS Bot
+        pygame.init()
+        init_this_thing()
+        pygame.time.Clock().tick(10)  # Clock to control the frame rate
+        player_farbe = True  # True : Weiss | False : Schwarz
+
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+            # while True:
+            zug_counter = zug_counter + 1
+            update_board(figuren)
+
+            # Unterbricht wenn MATT
+            legal_zuege = get_legale_zuege(dict(figuren), ist_weis_am_zug)
+            if not legal_zuege:
+                win = 1
+                break
+
+            if ist_weis_am_zug != player_farbe:
+                start_time = time.time()
+                causeImmaBeast = get_big_babba_move(figuren, ist_weis_am_zug, tiefen_berechung)
+                end_time = time.time()
+
+            # print()
+            # print("+-+-+-+-+-+-+-+-+-+-+-+-+-+ Max Killer Bot +-+-+-+-+-+-+-+-+-+-+-+-+-+")
+
+                try:
+                    temp_figuren = bewege_figur(causeImmaBeast[0][0], causeImmaBeast[0][1], dict(figuren), ist_weis_am_zug,
+                                            causeImmaBeast[0][3])
+                except:
+                    print("An exception occurred")
+                    break
+
+            # legale_zuege_print_format = get_legale_zug_darstellung(legal_zuege)
+                koordinaten = get_koordinaten_format(figuren, temp_figuren, ist_weis_am_zug)
+                time_adder += round(end_time - start_time, 3)
+                print("Zug : ", zug_counter, " Zug-Wert: ", causeImmaBeast[1], f"{koordinaten[0]}{koordinaten[1]} --> {koordinaten[2]}{koordinaten[3]}", "|||",
+                round(end_time - start_time, 3), " Sekunden")
+            # print()
+            # print("Legale Züge von", " Weis: " if ist_weis_am_zug  else " Schwarz")
+            # print_custom_schachbrett(legale_zuege_print_format)
+
+            # if not ist_weis_am_zug:
+            #     print("-------------------------- Weiß Am Zug --------------------------")
+            # else:
+            #     print("-------------------------- Schwarz Am Zug --------------------------")
+            if ist_weis_am_zug == player_farbe:
+                print("-------------------------- Zug Eingabe --------------------------")
+                zug = get_zug_eingabe()
+                zug_start = get_bit_wert_von_input(zug[0])
+                zug_ziel = get_bit_wert_von_input(zug[1])
+
+                temp_figuren = bewege_figur_ineffektiv(zug_start, zug_ziel, figuren, ist_weis_am_zug)
+
+            # Winning/Draw Conditions
+            if not figuren["w_ko"] or not legal_zuege:
+                print()
+                print("*********** Schwarz gewinnt! *********** ")
+                update_board(figuren)
+                time.sleep(60)
+                break
+
+            if not figuren["s_ko"] or not legal_zuege:
+                print()
+                print("*********** Weiß gewinnt! *********** ")
+                update_board(figuren)
+                time.sleep(60)
+                break
+
+            if bin(get_weis_figuren_maske(figuren)).count("1") == 1 and bin(get_schwarz_figuren_maske(figuren)).count(
+                    "1") == 1:
+                print()
+                print("***********  Draw *********** ")
+                update_board(figuren)
+                time.sleep(60)
+                break
+
+            aktualisiere_figuren(temp_figuren)
+
+        if win == 1:
+            if ist_weis_am_zug:
+                print("*********** Schwarz gewinnt! *********** ")
+                update_board(figuren)
+                print("Durchsch. Zug Zeit: ", round(time_adder / zug_counter, 3), " Sek.")
+                time.sleep(60)
+            else:
+                print("*********** Weiß gewinnt! *********** ")
+                update_board(figuren)
+                print("Durchsch. Zug Zeit: ", round(time_adder / zug_counter, 3), " Sek.")
+                time.sleep(60)
