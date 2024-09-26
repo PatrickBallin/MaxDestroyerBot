@@ -1,5 +1,11 @@
 import pygame
 import sys
+import sys
+import pygame
+import contextlib
+import io
+import os
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 
 # Chessboard and piece images
 BOARD_SIZE = 500
@@ -43,9 +49,10 @@ screen = None
 
 def init_this_thing():
     global screen
-    pygame.init()
-    screen = pygame.display.set_mode((BOARD_SIZE, BOARD_SIZE))
-    pygame.display.set_caption("Chessboard")
+    with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+        pygame.init()
+        screen = pygame.display.set_mode((BOARD_SIZE, BOARD_SIZE))
+        pygame.display.set_caption("Chessboard")
 
 
 def draw_chessboard():

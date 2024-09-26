@@ -196,7 +196,11 @@ def is_king_in_schach(figuren, is_weiss_am_zug):
 # -------------------------------------------- 0. imports ----------------------------------------------------
 import math
 import operator
+import os
 from random import randint
+# from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, as_completed
+import time
 
 # -------------------------------------------- Hilfsvariablen ----------------------------------------------------
 laufer_end_calculation_maske = int("1000000110000001100000011000000110000001100000011000000110000001", 2)
@@ -237,12 +241,23 @@ s_konig_gewichtung = 100000
 
 # BOARD WEIGHTS
 # -------------------------------------------- BLACK FIGS --------------------------------------------
+"""
+kings_end_game_table = [
+    -50,-40,-30,-20,-20,-30,-40,-50,
+    -30,-20,-10,  0,  0,-10,-20,-30,
+    -30,-10, 20, 30, 30, 20,-10,-30,
+    -30,-10, 30, 40, 40, 30,-10,-30,
+    -30,-10, 30, 40, 40, 30,-10,-30,
+    -30,-10, 20, 30, 30, 20,-10,-30,
+    -30,-30,  0,  0,  0,  0,-30,-30,
+    -50,-30,-30,-30,-30,-30,-30,-50]
+"""
 s_ko_maske_0 = int("0000000000000000000000000000000000011000000110000001100000011000", 2)
 s_ko_maske_1 = int("0000000000000000000000000001100001100110011001100110011001100110", 2)
 s_ko_maske_2 = int("0000000000000000000000000110011010000001100000011000000110000001", 2)
 s_ko_maske_3 = int("0000000000000000011111101000000100000000000000000000000000000000", 2)
 s_ko_maske_4 = int("0000000000000000100000010000000000000000000000000000000000000000", 2)
-s_ko_maske_5 = int("0010010000000000011111000011110000111100001111000000000000000000", 2)
+s_ko_maske_5 = int("0010010000000000000000000000000000000000000000000000000000000000", 2)
 s_ko_maske_6 = int("1000000111000011000000000000000000000000000000000000000000000000", 2)
 s_ko_maske_7 = int("0100001000000000000000000000000000000000000000000000000000000000", 2)
 
@@ -275,7 +290,7 @@ s_tu_maske_2_gewicht = 10
 
 s_la_maske_0 = int("1000000100000000000000000000000000000000000000000000000010000001", 2)
 s_la_maske_1 = int("0111111010000001100000011000000110000001100000011000000101111110", 2)
-s_la_maske_2 = int("0100001000000000000000000000000001100110001001000000000000000000", 2)
+s_la_maske_2 = int("0000000001000010000000000000000001100110001001000000000000000000", 2)
 s_la_maske_3 = int("0000000000000000011111100011110000011000000110000000000000000000", 2)
 
 s_la_maske_0_gewicht = -20
@@ -283,6 +298,18 @@ s_la_maske_1_gewicht = -10
 s_la_maske_2_gewicht = 5
 s_la_maske_3_gewicht = 10
 
+
+"""
+knightstable = [
+    -50, -40, -30, -30, -30, -30, -40, -50,
+    -40, -20, 0, 5, 5, 0, -20, -40,
+    -30, 5, 10, 15, 15, 10, 5, -30,
+    -30, 0, 15, 20, 20, 15, 0, -30,
+    -30, 5, 15, 20, 20, 15, 5, -30,
+    -30, 0, 10, 15, 15, 10, 0, -30,
+    -40, -20, 0, 0, 0, 0, -20, -40,
+    -50, -40, -30, -30, -30, -30, -40, -50]
+"""
 s_pf_maske_0 = int("1000000100000000000000000000000000000000000000000000000010000001", 2)
 s_pf_maske_1 = int("0100001010000001000000000000000000000000000000001000000101000010", 2)
 s_pf_maske_2 = int("0011110000000000100000011000000110000001100000010000000000111100", 2)
@@ -328,7 +355,7 @@ w_ko_maske_1 = int("011001100110011001100110011001100001100000000000000000000000
 w_ko_maske_2 = int("1000000110000001100000011000000101100110000000000000000000000000", 2)
 w_ko_maske_3 = int("0000000000000000000000000000000010000001011111100000000000000000", 2)
 w_ko_maske_4 = int("0000000000000000000000000000000000000000100000010000000000000000", 2)
-w_ko_maske_5 = int("0000000000000000001111000011110000111100001111100000000000100100", 2)
+w_ko_maske_5 = int("0000000000000000000000000000000000000000000000000000000000100100", 2)
 w_ko_maske_6 = int("0000000000000000000000000000000000000000000000001100001110000001", 2)
 w_ko_maske_7 = int("0000000000000000000000000000000000000000000000000000000001000010", 2)
 
@@ -361,7 +388,7 @@ w_tu_maske_2_gewicht = 10
 
 w_la_maske_0 = int("1000000100000000000000000000000000000000000000000000000010000001", 2)
 w_la_maske_1 = int("0111111010000001100000011000000110000001100000011000000101111110", 2)
-w_la_maske_2 = int("0000000000000000001001000110011000000000000000000000000001000010", 2)
+w_la_maske_2 = int("0000000000000000001001000110011000000000000000000100001000000000", 2)
 w_la_maske_3 = int("0000000000000000000110000001100000111100011111100000000000000000", 2)
 
 w_la_maske_0_gewicht = -20
@@ -373,7 +400,7 @@ w_pf_maske_0 = int("100000010000000000000000000000000000000000000000000000001000
 w_pf_maske_1 = int("0100001010000001000000000000000000000000000000001000000101000010", 2)
 w_pf_maske_2 = int("0011110000000000100000011000000110000001100000010000000000111100", 2)
 w_pf_maske_3 = int("0000000001000010000000000000000000000000000000000100001000000000", 2)
-w_pf_maske_4 = int("0000000001000010000000000000000000000000000000000100001000000000", 2)
+w_pf_maske_4 = int("0000000000000000000000000100001000000000010000100001100000000000", 2)
 w_pf_maske_5 = int("0000000000000000001001000000000000000000001001000000000000000000", 2)
 w_pf_maske_6 = int("0000000000000000000110000010010000100100000110000000000000000000", 2)
 w_pf_maske_7 = int("0000000000000000000000000001100000011000000000000000000000000000", 2)
@@ -408,6 +435,16 @@ w_ba_maske_7_gewicht = 30
 w_ba_maske_8_gewicht = 50
 
 # ################ Weights #################
+# ########### Evaluation Weights ############
+angriffs_feld_gewicht = 1.5
+
+# ########### ------------------ ############
+
+# ############### Global Tracking #################
+
+iteration_counter = 0
+
+# ############### --------------- #################
 
 
 def evaluiere_schachbrett(figuren):
@@ -420,7 +457,7 @@ def evaluiere_schachbrett(figuren):
         # A: Ist die Figur weiss:
         if "w_" in figur:
             if "_ba" in figur:
-                number_of_bits = bin(figuren[figur]).count("1")
+                number_of_bits = bin(figuren[figur]).count("1") * w_bauer_gewichtung
                 w_ba = figuren[figur]
 
                 gesamtwert_weiss += bin(w_ba_maske_0 & w_ba).count("1") * w_ba_maske_0_gewicht \
@@ -435,7 +472,7 @@ def evaluiere_schachbrett(figuren):
 
                 gesamtwert_weiss += number_of_bits
             elif "_la" in figur:
-                number_of_bits = bin(figuren[figur]).count("1")
+                number_of_bits = bin(figuren[figur]).count("1") * w_laufer_gewichtung
                 w_la = figuren[figur]
 
                 gesamtwert_weiss += bin(w_la_maske_0 & w_la).count("1") * w_la_maske_0_gewicht \
@@ -443,9 +480,9 @@ def evaluiere_schachbrett(figuren):
                                       + bin(w_la_maske_2 & w_la).count("1") * w_la_maske_2_gewicht \
                                       + bin(w_la_maske_3 & w_la).count("1") * w_la_maske_3_gewicht
 
-                gesamtwert_weiss += number_of_bits * w_laufer_gewichtung
+                gesamtwert_weiss += number_of_bits
             elif "_pf" in figur:
-                number_of_bits = bin(figuren[figur]).count("1")
+                number_of_bits = bin(figuren[figur]).count("1") * w_pferd_gewichtung
                 w_pf = figuren[figur]
 
                 gesamtwert_weiss += bin(w_pf_maske_0 & w_pf).count("1") * w_pf_maske_0_gewicht \
@@ -457,18 +494,18 @@ def evaluiere_schachbrett(figuren):
                                       + bin(w_pf_maske_6 & w_pf).count("1") * w_pf_maske_6_gewicht \
                                       + bin(w_pf_maske_7 & w_pf).count("1") * w_pf_maske_7_gewicht
 
-                gesamtwert_weiss += number_of_bits * w_pferd_gewichtung
+                gesamtwert_weiss += number_of_bits
             elif "_tu" in figur:
-                number_of_bits = bin(figuren[figur]).count("1")
+                number_of_bits = bin(figuren[figur]).count("1") * w_turm_gewichtung
                 w_tu = figuren[figur]
 
                 gesamtwert_weiss += bin(w_tu_maske_0 & w_tu).count("1") * w_tu_maske_0_gewicht \
                                       + bin(w_tu_maske_1 & w_tu).count("1") * w_tu_maske_1_gewicht \
                                       + bin(w_tu_maske_2 & w_tu).count("1") * w_tu_maske_2_gewicht
 
-                gesamtwert_weiss += number_of_bits * w_turm_gewichtung
+                gesamtwert_weiss += number_of_bits
             elif "_da" in figur:
-                number_of_bits = bin(figuren[figur]).count("1")
+                number_of_bits = bin(figuren[figur]).count("1") * w_damen_gewichtung
                 w_da = figuren[figur]
 
                 gesamtwert_weiss += bin(w_da_maske_0 & w_da).count("1") * w_da_maske_0_gewicht \
@@ -476,9 +513,9 @@ def evaluiere_schachbrett(figuren):
                                       + bin(w_da_maske_2 & w_da).count("1") * w_da_maske_2_gewicht \
                                       + bin(w_da_maske_3 & w_da).count("1") * w_da_maske_3_gewicht
 
-                gesamtwert_weiss += number_of_bits * w_damen_gewichtung
+                gesamtwert_weiss += number_of_bits
             elif "_ko" in figur:
-                number_of_bits = bin(figuren[figur]).count("1")
+                number_of_bits = bin(figuren[figur]).count("1") * w_konig_gewichtung
                 w_ko = figuren[figur]
 
                 gesamtwert_weiss += bin(w_ko_maske_0 & w_ko).count("1") * w_ko_maske_0_gewicht \
@@ -490,7 +527,7 @@ def evaluiere_schachbrett(figuren):
                                       + bin(w_ko_maske_6 & w_ko).count("1") * w_ko_maske_6_gewicht \
                                       + bin(w_ko_maske_7 & w_ko).count("1") * w_ko_maske_7_gewicht
 
-                gesamtwert_weiss += number_of_bits * w_konig_gewichtung
+                gesamtwert_weiss += number_of_bits
 
         #   B: Ist die Figur Schwarz:
         if "s_" in figur:
@@ -567,63 +604,209 @@ def evaluiere_schachbrett(figuren):
 
                 gesamtwert_schwarz += number_of_bits
 
+    # Angriffsfelder
+    # Weiße angriffsfelder
+    gesamtwert_weiss += bin(get_angriffs_maske(dict(figuren), True)).count("1") * angriffs_feld_gewicht
+
+    # Schwarze angriffsfelder
+    gesamtwert_schwarz += bin(get_angriffs_maske(dict(figuren), False)).count("1") * angriffs_feld_gewicht
+
     return round(gesamtwert_weiss - gesamtwert_schwarz)
 
 
 # --------------------------------------- NEW CODE INSERTION BEAST 2.0 -------------------------------------------
-def get_big_babba_move(figuren, is_weiss_am_zug, tiefe):
+# def get_big_babba_move(figuren, is_weiss_am_zug, tiefe):
+#     legale_zuege = get_legale_zuege(figuren, is_weiss_am_zug)
+#     legale_zuege = sort_liste_nach_capture(legale_zuege)
+#     babba_move = legale_zuege[randint(0, len(legale_zuege) - 1)]
+#
+#     if is_weiss_am_zug:
+#         big_babba_move_wert = -10 ** 17
+#     else:
+#         big_babba_move_wert = 10 ** 17
+#
+#     for zug in legale_zuege:
+#         temp_figuren = bewege_figur(zug[0], zug[1], dict(figuren), is_weiss_am_zug, zug[3])
+#
+#         if is_schachmatt(dict(temp_figuren), not is_weiss_am_zug):
+#             return zug, 0
+#
+#         evaluierung = minimax(temp_figuren, tiefe - 1, -10 ** 17, 10 ** 17, not is_weiss_am_zug)
+#
+#         if is_weiss_am_zug:
+#             if evaluierung > big_babba_move_wert:
+#                 big_babba_move_wert = evaluierung
+#                 babba_move = zug
+#             if evaluierung == big_babba_move_wert and "ko" not in zug[3]:
+#                 if not randint(0, 3):
+#                     big_babba_move_wert = evaluierung
+#                     babba_move = zug
+#         else:
+#             if evaluierung < big_babba_move_wert:
+#                 big_babba_move_wert = evaluierung
+#                 babba_move = zug
+#             if evaluierung == big_babba_move_wert and "ko" not in zug[3]:
+#                 if not randint(0, 3):
+#                     big_babba_move_wert = evaluierung
+#                     babba_move = zug
+#
+#     return babba_move, big_babba_move_wert
+
+
+# def get_big_babba_move(figuren, is_weiss_am_zug, tiefe):
+#     legale_zuege = get_legale_zuege(figuren, is_weiss_am_zug)
+#     legale_zuege = sort_liste_nach_capture(legale_zuege)
+#     babba_move = legale_zuege[randint(0, len(legale_zuege) - 1)]
+#
+#     if is_weiss_am_zug:
+#         big_babba_move_wert = -10 ** 17
+#     else:
+#         big_babba_move_wert = 10 ** 17
+#
+#     # Iterative deepening
+#     # Suche wiederholen mit tiefe + i (i counter of loop)
+#     # Den besten move als ersten move der Nächsten Suche ausführen
+#     # (Zeit geben uns dann abbrechen) --> Zuerst nur Captcha moves suchen 3/5 Zeit?
+#
+#     for zug in legale_zuege:
+#         temp_figuren = bewege_figur(zug[0], zug[1], dict(figuren), is_weiss_am_zug, zug[3])
+#
+#         if is_schachmatt(dict(temp_figuren), not is_weiss_am_zug):
+#             return zug, 0
+#
+#
+#         # print("TIEFE:", iterative_tiefe)
+#         evaluierung = minimax(temp_figuren, tiefe - 1, -10 ** 17, 10 ** 17, not is_weiss_am_zug)
+#
+#         if is_weiss_am_zug:
+#             if evaluierung > big_babba_move_wert:
+#                 big_babba_move_wert = evaluierung
+#                 babba_move = zug
+#             if evaluierung == big_babba_move_wert and "ko" not in zug[3]:
+#                 if not randint(0, 3):
+#                     big_babba_move_wert = evaluierung
+#                     babba_move = zug
+#         else:
+#             if evaluierung < big_babba_move_wert:
+#                 big_babba_move_wert = evaluierung
+#                 babba_move = zug
+#             if evaluierung == big_babba_move_wert and "ko" not in zug[3]:
+#                 if not randint(0, 3):
+#                     big_babba_move_wert = evaluierung
+#                     babba_move = zug
+#
+#         # Besten Move in index 0 inserten
+#
+#     return babba_move, big_babba_move_wert
+
+def evaluate_move(zug, figuren, is_weiss_am_zug, current_depth):
+    temp_figuren = bewege_figur(zug[0], zug[1], dict(figuren), is_weiss_am_zug, zug[3])
+    if is_schachmatt(temp_figuren, not is_weiss_am_zug):
+        return zug, 0  # Immediate checkmate found
+    evaluierung = minimax(temp_figuren, current_depth - 1, -10 ** 17, 10 ** 17, not is_weiss_am_zug)
+    return zug, evaluierung
+
+
+def get_big_babba_move(figuren, is_weiss_am_zug, max_tiefe):
+    babba_move = None
     legale_zuege = get_legale_zuege(figuren, is_weiss_am_zug)
     legale_zuege = sort_liste_nach_capture(legale_zuege)
-    babba_move = legale_zuege[randint(0, len(legale_zuege) - 1)]
+    last_iteration_zug = legale_zuege[randint(0, len(legale_zuege) - 1)]
 
-    if is_weiss_am_zug:
-        big_babba_move_wert = -10 ** 17
-    else:
-        big_babba_move_wert = 10 ** 17
-
-    for zug in legale_zuege:
-        temp_figuren = bewege_figur(zug[0], zug[1], dict(figuren), is_weiss_am_zug, zug[3])
-
-        if is_schachmatt(dict(temp_figuren), not is_weiss_am_zug):
-            return zug, 0
-
-        # TODO: Tiefer in die Züge gehen die Schach setzen
-        # TEST
-        # if is_king_in_schach(temp_figuren, not is_weiss_am_zug):
-        #    tiefe = 7
-
-        # TODO: DAuert irgendwie zu lange
-        # if zug[2]:
-        #   tiefe = 4
-        # Erweiterung bei capture Moves
-
-        # TEST ENDE
-
-        evaluierung = minimax(temp_figuren, tiefe - 1, -10 ** 17, 10 ** 17, not is_weiss_am_zug)
-
+    # Iterative deepening loop
+    for current_depth in range(1, max_tiefe + 1):
         if is_weiss_am_zug:
-            if evaluierung > big_babba_move_wert:
-                big_babba_move_wert = evaluierung
-                babba_move = zug
-            if evaluierung == big_babba_move_wert and "ko" not in zug[3]:
-                if not randint(0, 5):
-                    big_babba_move_wert = evaluierung
-                    babba_move = zug
+            big_babba_move_wert = -10 ** 17
         else:
-            if evaluierung < big_babba_move_wert:
-                big_babba_move_wert = evaluierung
-                babba_move = zug
-            if evaluierung == big_babba_move_wert and "ko" not in zug[3]:
-                if not randint(0, 5):
-                    big_babba_move_wert = evaluierung
-                    babba_move = zug
+            big_babba_move_wert = 10 ** 17
+
+        # Evaluate moves concurrently using ThreadPoolExecutor
+        with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
+            future_to_move = {executor.submit(evaluate_move, zug, dict(figuren), is_weiss_am_zug, current_depth): zug for zug
+                              in legale_zuege}
+
+            for future in as_completed(future_to_move):
+                zug, evaluierung = future.result()
+
+                if is_weiss_am_zug:
+                    if evaluierung > big_babba_move_wert:
+                        big_babba_move_wert = evaluierung
+                        babba_move = zug
+                    elif evaluierung == big_babba_move_wert:
+                        if not randint(0, 3):
+                            babba_move = zug
+                else:
+                    if evaluierung < big_babba_move_wert:
+                        big_babba_move_wert = evaluierung
+                        babba_move = zug
+                    elif evaluierung == big_babba_move_wert:
+                        if not randint(0, 3):
+                            babba_move = zug
+
+        legale_zuege = [babba_move] + [zug for zug in legale_zuege if zug != babba_move]
 
     return babba_move, big_babba_move_wert
 
 
+# ................................ TEST ................................
+# def get_big_babba_move(figuren, is_weiss_am_zug, max_tiefe):
+#     import time
+#
+#     babba_move = None
+#     legale_zuege = get_legale_zuege(figuren, is_weiss_am_zug)
+#     legale_zuege = sort_liste_nach_capture(legale_zuege)
+#     last_iteration_zug = legale_zuege[randint(0, len(legale_zuege) - 1)]
+#
+#     # Iterative deepening loop
+#     for current_depth in range(1, max_tiefe + 1):
+#         # print("Sorttedlegale_zuege: ", legale_zuege)
+#
+#         if is_weiss_am_zug:
+#             big_babba_move_wert = -10 ** 17
+#         else:
+#             big_babba_move_wert = 10 ** 17
+#
+#         for zug in legale_zuege:
+#             temp_figuren = bewege_figur(zug[0], zug[1], dict(figuren), is_weiss_am_zug, zug[3])
+#
+#             if is_schachmatt(temp_figuren, not is_weiss_am_zug):
+#                 return zug, 0  # Immediate checkmate found
+#
+#             # Call minimax with alpha-beta pruning
+#             evaluierung = minimax(temp_figuren, current_depth - 1, -10 ** 17, 10 ** 17, not is_weiss_am_zug)
+#
+#             if is_weiss_am_zug:
+#                 if evaluierung > big_babba_move_wert:
+#                     big_babba_move_wert = evaluierung
+#                     babba_move = zug
+#                     # print("zug", zug, " W:", big_babba_move_wert)
+#                 if evaluierung == big_babba_move_wert:
+#                     if not randint(0, 3):
+#                         big_babba_move_wert = evaluierung
+#                         babba_move = zug
+#
+#             else:
+#                 if evaluierung < big_babba_move_wert:
+#                     big_babba_move_wert = evaluierung
+#                     babba_move = zug
+#                 if evaluierung == big_babba_move_wert:
+#                     if not randint(0, 3):
+#                         big_babba_move_wert = evaluierung
+#                         babba_move = zug
+#                     # print("zug", zug, " W:", big_babba_move_wert)
+#
+#         legale_zuege = [babba_move] + [zug for zug in legale_zuege if zug != babba_move]
+#         # print("NEW::: ", legale_zuege)
+#
+#         # last_iteration_zug = babba_move
+#
+#     return babba_move, big_babba_move_wert
+#
+
+
 def minimax(figuren, tiefe, alpha, beta, is_weiss_am_zug):
     if tiefe == 0:
-        return evaluiere_schachbrett(figuren)
+        return quiescence_search(figuren, alpha, beta, is_weiss_am_zug, 0)
 
     legale_zuege = get_legale_zuege(dict(figuren), is_weiss_am_zug)
 
@@ -657,6 +840,46 @@ def minimax(figuren, tiefe, alpha, beta, is_weiss_am_zug):
             if beta <= alpha:  # Pruning
                 break
         return min_evaluierung
+
+
+def quiescence_search(figuren, alpha, beta, is_weiss_am_zug, max_tiefe):
+    # Stop if quiescence depth limit is reached
+    if max_tiefe == 0:
+        return evaluiere_schachbrett(figuren)  # Static evaluation
+
+    # Get tactical moves (captures, checks, promotions)
+    legale_zuege = get_legale_zuege(dict(figuren), is_weiss_am_zug)
+    legale_zuege = filter_captcha_zuege(legale_zuege)
+
+    # If there are no tactical moves, return static evaluation
+    if not legale_zuege:
+        return evaluiere_schachbrett(figuren)
+
+    # White to move (maximizing player)
+    if is_weiss_am_zug:
+        max_evaluierung = -10 ** 17
+        for zug in legale_zuege:
+            temp_figuren = bewege_figur(zug[0], zug[1], dict(figuren), True, zug[3])
+            evaluierung = quiescence_search(dict(temp_figuren), alpha, beta, False, max_tiefe - 1)
+            max_evaluierung = max(max_evaluierung, evaluierung)
+            alpha = max(alpha, evaluierung)
+            if beta <= alpha:  # Beta pruning
+                break
+        return max_evaluierung
+
+    # Black to move (minimizing player)
+    else:
+        min_evaluierung = 10 ** 17
+        for zug in legale_zuege:
+            temp_figuren = bewege_figur(zug[0], zug[1], dict(figuren), False, zug[3])
+            evaluierung = quiescence_search(dict(temp_figuren), alpha, beta, True, max_tiefe - 1)
+            min_evaluierung = min(min_evaluierung, evaluierung)
+            beta = min(beta, evaluierung)
+            if beta <= alpha:  # Alpha pruning
+                break
+        return min_evaluierung
+
+# ................................ TEST END ................................
 
 
 def get_legale_zuege(figuren, is_weiss_am_zug):
@@ -707,7 +930,8 @@ def get_legale_zuege(figuren, is_weiss_am_zug):
         return []
 
     legale_zuege = check_legale_zuege(figuren, sudo_legale_zuege, is_weiss_am_zug)
-    return legale_zuege
+    sorted_legale_zuege = sort_liste_nach_capture(legale_zuege)
+    return sorted_legale_zuege
 
 
 def change_legale_zuege_format(figur_bit_iterator, legale_bit_zuege, figuren, figurenname, is_weiss_am_zug):
@@ -806,9 +1030,13 @@ def is_schachmatt(figuren, is_weiss_am_zug):
 
 def sort_liste_nach_capture(legale_zuege):
     # Sortiert nach da, tu..., ba
-    # sortierte_liste = sorted(legale_zuege, key=lambda x: x[3], reverse=True)
-    sortierte_liste = sorted(legale_zuege, key=lambda x: not x[2])
+    skrt = sorted(legale_zuege, key=lambda x: x[3], reverse=True)
+    sortierte_liste = sorted(skrt, key=lambda x: not x[2])
     return sortierte_liste
+
+
+def filter_captcha_zuege(legale_zuege):
+    return [element for element in legale_zuege if element[2]]
 
 
 # --------------------------------------- NEW CODE INSERTION BEAST 2.0 END -------------------------------------------
@@ -821,68 +1049,68 @@ def get_legale_bauern_zuege(bauer, figuren, ist_weiss_am_zug):
     if ist_weiss_am_zug:
         # normal fall weis Bauer bewegt sich um eins nach vorne
         # Steht etwas auf diesem Feld
-        if (bauer << schachbrett_groesse_wurzel) & schachbrett == 0:
-            legale_bauern_zuge = bauer << schachbrett_groesse_wurzel
+        if (bauer << 8) & schachbrett == 0:
+            legale_bauern_zuge = bauer << 8
 
         # Doppel Sprung
-        if (bauer << (schachbrett_groesse_wurzel * 2) | (
-                bauer << schachbrett_groesse_wurzel)) & schachbrett == 0:
+        if (bauer << (8 * 2) | (
+                bauer << 8)) & schachbrett == 0:
             # falls der Bauer am Anfang steht
             if bauer & doppel_move_weis_maske:
-                temp = bauer << (schachbrett_groesse_wurzel * 2)
+                temp = bauer << (8 * 2)
                 legale_bauern_zuge = legale_bauern_zuge | temp
 
         # Attack Move
         gegnerische_figuren = get_schwarz_figuren_maske(figuren)
 
         # Fall Angriff: Steht diagonal links ein Gegner dann füge zuege hinzu
-        angriff_diagonal_links = bauer << (schachbrett_groesse_wurzel + 1)
+        angriff_diagonal_links = bauer << (8 + 1)
 
         # Links darf nur geschlagen werden wenn log(bauer) % Wurzel != Wurzel - 1 ist (verhindert übern Rand schlagen)
-        if math.log2(bauer) % schachbrett_groesse_wurzel != schachbrett_groesse_wurzel - 1:
+        if math.log2(bauer) % 8 != 8 - 1:
             # Steht eine Gengerische Figur links diagonal
             if angriff_diagonal_links & gegnerische_figuren != 0:
                 legale_bauern_zuge = legale_bauern_zuge | angriff_diagonal_links
 
         # Fall Angriff: Steht diagonal rechts ein Gegner dann füge zuege hinzu
-        angriff_diagonal_rechts = bauer << (schachbrett_groesse_wurzel - 1)
+        angriff_diagonal_rechts = bauer << (8 - 1)
 
         # Kein schlagen über die Brett KAnte
-        if math.log2(bauer) % schachbrett_groesse_wurzel != 0:
+        if math.log2(bauer) % 8 != 0:
             if angriff_diagonal_rechts & gegnerische_figuren != 0:
                 legale_bauern_zuge = legale_bauern_zuge | angriff_diagonal_rechts
     else:
         # Schwarz am Zug
         # normal fall schwarz Bauer bewegt sich um eins nach vorne
         # Steht etwas auf diesem Feld
-        if (bauer >> schachbrett_groesse_wurzel) & schachbrett == 0:
-            legale_bauern_zuge = bauer >> schachbrett_groesse_wurzel
+        if (bauer >> 8) & schachbrett == 0:
+            legale_bauern_zuge = bauer >> 8
 
         # Doppel Sprung
-        if (bauer >> (schachbrett_groesse_wurzel * 2) | (
-                bauer >> schachbrett_groesse_wurzel)) & schachbrett == 0:
+        if (bauer >> (8 * 2) | (
+                bauer >> 8)) & schachbrett == 0:
             # falls der Bauer am Anfang steht
             if bauer & doppel_move_schwarz_maske:
-                temp = bauer >> (schachbrett_groesse_wurzel * 2)
+                temp = bauer >> (8 * 2)
                 legale_bauern_zuge = legale_bauern_zuge | temp
 
         # Attack Move
         gegnerische_figuren = get_weis_figuren_maske(figuren)
 
         # Fall Angriff: Steht diagonal links ein Gegner dann füge zuege hinzu
-        angriff_diagonal_links = bauer >> (schachbrett_groesse_wurzel + 1)
+        angriff_diagonal_links = bauer >> (8 + 1)
 
         # Links darf nur geschlagen werden wenn log(bauer) % Wurzel != Wurzel - 1 ist (verhindert übern Rand schlagen)
-        if math.log2(bauer) % schachbrett_groesse_wurzel != 0:
+        if math.log2(bauer) % 8 != 0:
             # Steht eine Gengerische Figur links diagonal
             if angriff_diagonal_links & gegnerische_figuren != 0:
                 legale_bauern_zuge = legale_bauern_zuge | angriff_diagonal_links
 
         # Fall Angriff: Steht diagonal rechts ein Gegner dann füge zuege hinzu
-        angriff_diagonal_rechts = bauer >> (schachbrett_groesse_wurzel - 1)
+        angriff_diagonal_rechts = bauer >> (8 - 1)
 
         # Kein schlagen über die Brett KAnte
-        if math.log2(bauer) % schachbrett_groesse_wurzel != schachbrett_groesse_wurzel - 1:
+        if math.log2(bauer) % 8 != 8 - 1:
             if angriff_diagonal_rechts & gegnerische_figuren != 0:
                 legale_bauern_zuge = legale_bauern_zuge | angriff_diagonal_rechts
 

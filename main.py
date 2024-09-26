@@ -7,7 +7,10 @@ DO do's:
 """
 import math
 import operator
-
+import sys
+import pygame
+import contextlib
+import io
 # -------------------------------------------- 0. imports ----------------------------------------------------
 # import math
 import time
@@ -16,7 +19,7 @@ import pygame
 
 from Evaluation import get_legale_zuege, get_angriffs_maske, minimax, get_big_babba_move, \
     bewege_figur, get_weis_figuren_maske, get_schwarz_figuren_maske, get_koordinaten_format, is_king_in_schach, \
-    is_schachmatt
+    is_schachmatt, evaluiere_schachbrett, filter_captcha_zuege
 from Evaluation import init_bot
 
 # from Evaluation import bewege_bauer
@@ -477,13 +480,14 @@ if __name__ == '__main__':
     zug_counter = 0
     time_adder = 0
 
-    tiefen_berechung = 1
+    tiefen_berechung = 4
 
     # ---------------------------------------------------------- BOTOOOO START ----------------------------------------------------------
     if testing == 0:
         # Chessboard represnation
-        pygame.init()
-        init_this_thing()
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            pygame.init()
+            init_this_thing()
         pygame.time.Clock().tick(10)  # Clock to control the frame rate
 
         while True:
@@ -493,7 +497,8 @@ if __name__ == '__main__':
        # while True:
             zug_counter = zug_counter + 1
             update_board(figuren)
-
+            # print("--- Farbwechsel ---")
+            print("\033[1m--- Farbwechsel ---\033[0m")
             # print_schachbrett()
             # print()
             # print_schachbrett_mit_bezeichnungen()
@@ -522,6 +527,7 @@ if __name__ == '__main__':
             koordinaten = get_koordinaten_format(figuren, temp_figuren, ist_weis_am_zug)
             time_adder += round(end_time - start_time, 3)
             print("Zug : ", zug_counter, " Zug-Wert: ", causeImmaBeast[1], f"{koordinaten[0]}{koordinaten[1]} --> {koordinaten[2]}{koordinaten[3]}",  "|||", round(end_time - start_time, 3), " Sekunden")
+            print("Durchsch. Zug Zeit: ", round(time_adder / zug_counter, 3), " Sek.")
             # print()
             # print("Legale Züge von", " Weis: " if ist_weis_am_zug  else " Schwarz")
             # print_custom_schachbrett(legale_zuege_print_format)
@@ -610,8 +616,8 @@ if __name__ == '__main__':
 
     if testing == 2:
         print_schachbrett()
-        legal_zuege = get_legale_zuege(figuren, not ist_weis_am_zug)
-        print(legal_zuege)
+        leg_z = get_legale_zuege(figuren, ist_weis_am_zug)
+        print(filter_captcha_zuege(leg_z))
 
     if testing == 3:
         pygame.init()
