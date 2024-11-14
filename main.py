@@ -471,7 +471,7 @@ def get_legale_zug_darstellung(zug_formatted):
 
 # -------------------------------------------- Main Funktion ----------------------------------------------------
 if __name__ == '__main__':
-    testing = 0
+    testing = 5
     set_schachbrett_groesse(64, 8)
     print("Schachfeld:")
     init_schachbrett()
@@ -665,7 +665,7 @@ if __name__ == '__main__':
         pygame.init()
         init_this_thing()
         pygame.time.Clock().tick(10)  # Clock to control the frame rate
-        player_farbe = True  # True : Weiss | False : Schwarz
+        player_farbe = False  # True : Weiss | False : Schwarz
 
         while True:
             for event in pygame.event.get():

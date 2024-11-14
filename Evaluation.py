@@ -212,7 +212,7 @@ uber_brett_hinaus_maske = int("1111111111111111111111111111111111111111111111111
 schachbrett_groesse = 0
 schachbrett_groesse_wurzel = 0
 
-biggest_single_bit_number = 0
+biggest_single_bit_number = int(bin(2 ** (64 - 1)), 2)
 
 doppel_move_weis_maske = int("0000000000000000000000000000000000000000000000001111111100000000", 2)
 doppel_move_schwarz_maske = int("0000000011111111000000000000000000000000000000000000000000000000", 2)
@@ -436,7 +436,7 @@ w_ba_maske_8_gewicht = 50
 
 # ################ Weights #################
 # ########### Evaluation Weights ############
-angriffs_feld_gewicht = 1.5
+angriffs_feld_gewicht = 1.0
 
 # ########### ------------------ ############
 
@@ -606,101 +606,18 @@ def evaluiere_schachbrett(figuren):
 
     # Angriffsfelder
     # Weiße angriffsfelder
-    gesamtwert_weiss += bin(get_angriffs_maske(dict(figuren), True)).count("1") * angriffs_feld_gewicht
+    gesamtwert_weiss += bin(get_angriffs_maske(figuren.copy(), True)).count("1") * angriffs_feld_gewicht
 
     # Schwarze angriffsfelder
-    gesamtwert_schwarz += bin(get_angriffs_maske(dict(figuren), False)).count("1") * angriffs_feld_gewicht
+    gesamtwert_schwarz += bin(get_angriffs_maske(figuren.copy(), False)).count("1") * angriffs_feld_gewicht
 
     return round(gesamtwert_weiss - gesamtwert_schwarz)
 
 
 # --------------------------------------- NEW CODE INSERTION BEAST 2.0 -------------------------------------------
-# def get_big_babba_move(figuren, is_weiss_am_zug, tiefe):
-#     legale_zuege = get_legale_zuege(figuren, is_weiss_am_zug)
-#     legale_zuege = sort_liste_nach_capture(legale_zuege)
-#     babba_move = legale_zuege[randint(0, len(legale_zuege) - 1)]
-#
-#     if is_weiss_am_zug:
-#         big_babba_move_wert = -10 ** 17
-#     else:
-#         big_babba_move_wert = 10 ** 17
-#
-#     for zug in legale_zuege:
-#         temp_figuren = bewege_figur(zug[0], zug[1], dict(figuren), is_weiss_am_zug, zug[3])
-#
-#         if is_schachmatt(dict(temp_figuren), not is_weiss_am_zug):
-#             return zug, 0
-#
-#         evaluierung = minimax(temp_figuren, tiefe - 1, -10 ** 17, 10 ** 17, not is_weiss_am_zug)
-#
-#         if is_weiss_am_zug:
-#             if evaluierung > big_babba_move_wert:
-#                 big_babba_move_wert = evaluierung
-#                 babba_move = zug
-#             if evaluierung == big_babba_move_wert and "ko" not in zug[3]:
-#                 if not randint(0, 3):
-#                     big_babba_move_wert = evaluierung
-#                     babba_move = zug
-#         else:
-#             if evaluierung < big_babba_move_wert:
-#                 big_babba_move_wert = evaluierung
-#                 babba_move = zug
-#             if evaluierung == big_babba_move_wert and "ko" not in zug[3]:
-#                 if not randint(0, 3):
-#                     big_babba_move_wert = evaluierung
-#                     babba_move = zug
-#
-#     return babba_move, big_babba_move_wert
-
-
-# def get_big_babba_move(figuren, is_weiss_am_zug, tiefe):
-#     legale_zuege = get_legale_zuege(figuren, is_weiss_am_zug)
-#     legale_zuege = sort_liste_nach_capture(legale_zuege)
-#     babba_move = legale_zuege[randint(0, len(legale_zuege) - 1)]
-#
-#     if is_weiss_am_zug:
-#         big_babba_move_wert = -10 ** 17
-#     else:
-#         big_babba_move_wert = 10 ** 17
-#
-#     # Iterative deepening
-#     # Suche wiederholen mit tiefe + i (i counter of loop)
-#     # Den besten move als ersten move der Nächsten Suche ausführen
-#     # (Zeit geben uns dann abbrechen) --> Zuerst nur Captcha moves suchen 3/5 Zeit?
-#
-#     for zug in legale_zuege:
-#         temp_figuren = bewege_figur(zug[0], zug[1], dict(figuren), is_weiss_am_zug, zug[3])
-#
-#         if is_schachmatt(dict(temp_figuren), not is_weiss_am_zug):
-#             return zug, 0
-#
-#
-#         # print("TIEFE:", iterative_tiefe)
-#         evaluierung = minimax(temp_figuren, tiefe - 1, -10 ** 17, 10 ** 17, not is_weiss_am_zug)
-#
-#         if is_weiss_am_zug:
-#             if evaluierung > big_babba_move_wert:
-#                 big_babba_move_wert = evaluierung
-#                 babba_move = zug
-#             if evaluierung == big_babba_move_wert and "ko" not in zug[3]:
-#                 if not randint(0, 3):
-#                     big_babba_move_wert = evaluierung
-#                     babba_move = zug
-#         else:
-#             if evaluierung < big_babba_move_wert:
-#                 big_babba_move_wert = evaluierung
-#                 babba_move = zug
-#             if evaluierung == big_babba_move_wert and "ko" not in zug[3]:
-#                 if not randint(0, 3):
-#                     big_babba_move_wert = evaluierung
-#                     babba_move = zug
-#
-#         # Besten Move in index 0 inserten
-#
-#     return babba_move, big_babba_move_wert
 
 def evaluate_move(zug, figuren, is_weiss_am_zug, current_depth):
-    temp_figuren = bewege_figur(zug[0], zug[1], dict(figuren), is_weiss_am_zug, zug[3])
+    temp_figuren = bewege_figur(zug[0], zug[1], figuren.copy(), is_weiss_am_zug, zug[3])
     if is_schachmatt(temp_figuren, not is_weiss_am_zug):
         return zug, 0  # Immediate checkmate found
     evaluierung = minimax(temp_figuren, current_depth - 1, -10 ** 17, 10 ** 17, not is_weiss_am_zug)
@@ -722,7 +639,7 @@ def get_big_babba_move(figuren, is_weiss_am_zug, max_tiefe):
 
         # Evaluate moves concurrently using ThreadPoolExecutor
         with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
-            future_to_move = {executor.submit(evaluate_move, zug, dict(figuren), is_weiss_am_zug, current_depth): zug for zug
+            future_to_move = {executor.submit(evaluate_move, zug, figuren, is_weiss_am_zug, current_depth): zug for zug
                               in legale_zuege}
 
             for future in as_completed(future_to_move):
@@ -748,67 +665,11 @@ def get_big_babba_move(figuren, is_weiss_am_zug, max_tiefe):
     return babba_move, big_babba_move_wert
 
 
-# ................................ TEST ................................
-# def get_big_babba_move(figuren, is_weiss_am_zug, max_tiefe):
-#     import time
-#
-#     babba_move = None
-#     legale_zuege = get_legale_zuege(figuren, is_weiss_am_zug)
-#     legale_zuege = sort_liste_nach_capture(legale_zuege)
-#     last_iteration_zug = legale_zuege[randint(0, len(legale_zuege) - 1)]
-#
-#     # Iterative deepening loop
-#     for current_depth in range(1, max_tiefe + 1):
-#         # print("Sorttedlegale_zuege: ", legale_zuege)
-#
-#         if is_weiss_am_zug:
-#             big_babba_move_wert = -10 ** 17
-#         else:
-#             big_babba_move_wert = 10 ** 17
-#
-#         for zug in legale_zuege:
-#             temp_figuren = bewege_figur(zug[0], zug[1], dict(figuren), is_weiss_am_zug, zug[3])
-#
-#             if is_schachmatt(temp_figuren, not is_weiss_am_zug):
-#                 return zug, 0  # Immediate checkmate found
-#
-#             # Call minimax with alpha-beta pruning
-#             evaluierung = minimax(temp_figuren, current_depth - 1, -10 ** 17, 10 ** 17, not is_weiss_am_zug)
-#
-#             if is_weiss_am_zug:
-#                 if evaluierung > big_babba_move_wert:
-#                     big_babba_move_wert = evaluierung
-#                     babba_move = zug
-#                     # print("zug", zug, " W:", big_babba_move_wert)
-#                 if evaluierung == big_babba_move_wert:
-#                     if not randint(0, 3):
-#                         big_babba_move_wert = evaluierung
-#                         babba_move = zug
-#
-#             else:
-#                 if evaluierung < big_babba_move_wert:
-#                     big_babba_move_wert = evaluierung
-#                     babba_move = zug
-#                 if evaluierung == big_babba_move_wert:
-#                     if not randint(0, 3):
-#                         big_babba_move_wert = evaluierung
-#                         babba_move = zug
-#                     # print("zug", zug, " W:", big_babba_move_wert)
-#
-#         legale_zuege = [babba_move] + [zug for zug in legale_zuege if zug != babba_move]
-#         # print("NEW::: ", legale_zuege)
-#
-#         # last_iteration_zug = babba_move
-#
-#     return babba_move, big_babba_move_wert
-#
-
-
 def minimax(figuren, tiefe, alpha, beta, is_weiss_am_zug):
     if tiefe == 0:
         return quiescence_search(figuren, alpha, beta, is_weiss_am_zug, 0)
 
-    legale_zuege = get_legale_zuege(dict(figuren), is_weiss_am_zug)
+    legale_zuege = get_legale_zuege(figuren.copy(), is_weiss_am_zug)
 
     if not legale_zuege:
         if is_schachmatt(dict(figuren), is_weiss_am_zug):
@@ -822,8 +683,8 @@ def minimax(figuren, tiefe, alpha, beta, is_weiss_am_zug):
     if is_weiss_am_zug:
         max_evaluierung = -10 ** 17
         for zug in legale_zuege:
-            temp_figuren = bewege_figur(zug[0], zug[1], dict(figuren), True, zug[3])
-            evaluierung = minimax(dict(temp_figuren), tiefe - 1, alpha, beta, False)
+            temp_figuren = bewege_figur(zug[0], zug[1], figuren.copy(), True, zug[3])
+            evaluierung = minimax(temp_figuren.copy(), tiefe - 1, alpha, beta, False)
             max_evaluierung = max(max_evaluierung, evaluierung)
             alpha = max(alpha, evaluierung)
             if beta <= alpha:  # Pruning
@@ -833,8 +694,8 @@ def minimax(figuren, tiefe, alpha, beta, is_weiss_am_zug):
     else:
         min_evaluierung = 10 ** 17
         for zug in legale_zuege:
-            temp_figuren = bewege_figur(zug[0], zug[1], dict(figuren), False, zug[3])
-            evaluierung = minimax(dict(temp_figuren), tiefe - 1, alpha, beta, True)
+            temp_figuren = bewege_figur(zug[0], zug[1], figuren.copy(), False, zug[3])
+            evaluierung = minimax(temp_figuren.copy(), tiefe - 1, alpha, beta, True)
             min_evaluierung = min(min_evaluierung, evaluierung)
             beta = min(beta, evaluierung)
             if beta <= alpha:  # Pruning
@@ -848,7 +709,7 @@ def quiescence_search(figuren, alpha, beta, is_weiss_am_zug, max_tiefe):
         return evaluiere_schachbrett(figuren)  # Static evaluation
 
     # Get tactical moves (captures, checks, promotions)
-    legale_zuege = get_legale_zuege(dict(figuren), is_weiss_am_zug)
+    legale_zuege = get_legale_zuege(figuren.copy(), is_weiss_am_zug)
     legale_zuege = filter_captcha_zuege(legale_zuege)
 
     # If there are no tactical moves, return static evaluation
@@ -859,8 +720,8 @@ def quiescence_search(figuren, alpha, beta, is_weiss_am_zug, max_tiefe):
     if is_weiss_am_zug:
         max_evaluierung = -10 ** 17
         for zug in legale_zuege:
-            temp_figuren = bewege_figur(zug[0], zug[1], dict(figuren), True, zug[3])
-            evaluierung = quiescence_search(dict(temp_figuren), alpha, beta, False, max_tiefe - 1)
+            temp_figuren = bewege_figur(zug[0], zug[1], figuren.copy(), True, zug[3])
+            evaluierung = quiescence_search(temp_figuren.copy(), alpha, beta, False, max_tiefe - 1)
             max_evaluierung = max(max_evaluierung, evaluierung)
             alpha = max(alpha, evaluierung)
             if beta <= alpha:  # Beta pruning
@@ -871,8 +732,8 @@ def quiescence_search(figuren, alpha, beta, is_weiss_am_zug, max_tiefe):
     else:
         min_evaluierung = 10 ** 17
         for zug in legale_zuege:
-            temp_figuren = bewege_figur(zug[0], zug[1], dict(figuren), False, zug[3])
-            evaluierung = quiescence_search(dict(temp_figuren), alpha, beta, True, max_tiefe - 1)
+            temp_figuren = bewege_figur(zug[0], zug[1], figuren.copy(), False, zug[3])
+            evaluierung = quiescence_search(temp_figuren.copy(), alpha, beta, True, max_tiefe - 1)
             min_evaluierung = min(min_evaluierung, evaluierung)
             beta = min(beta, evaluierung)
             if beta <= alpha:  # Alpha pruning
@@ -962,7 +823,7 @@ def check_legale_zuege(figuren, sudo_legale_zuege, is_weiss_am_zug):
     sudo_legale_zuege_flat = [x for xs in sudo_legale_zuege for x in xs]
 
     for sudo_zug in sudo_legale_zuege_flat:
-        temp_figuren = bewege_figur(sudo_zug[0], sudo_zug[1], dict(figuren), is_weiss_am_zug, sudo_zug[3])
+        temp_figuren = bewege_figur(sudo_zug[0], sudo_zug[1], figuren.copy(), is_weiss_am_zug, sudo_zug[3])
 
         if not is_king_in_schach(temp_figuren, is_weiss_am_zug):
             checked_legale_zuege.append(sudo_zug)
@@ -972,7 +833,7 @@ def check_legale_zuege(figuren, sudo_legale_zuege, is_weiss_am_zug):
 
 def is_king_in_schach(figuren,
                       is_weiss_am_zug):  # Black King check?: is_weiss_am_zug: False | White King check?: is_weiss_am_zug: True
-    gegner_angriffs_maske = get_angriffs_maske(dict(figuren), not is_weiss_am_zug)
+    gegner_angriffs_maske = get_angriffs_maske(figuren.copy(), not is_weiss_am_zug)
 
     # Gegnger Greift könig an
     if figuren["w_ko" if is_weiss_am_zug else "s_ko"] & gegner_angriffs_maske > 0:
